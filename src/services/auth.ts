@@ -4,6 +4,7 @@ import {
   signInAnonymously as firebaseSignInAnonymously,
 } from "@react-native-firebase/auth";
 import useUserStore from "../stores/UserStore";
+import userService from "./user";
 
 class AuthService {
   async signInAnonymously(): Promise<string> {
@@ -37,6 +38,12 @@ class AuthService {
 
   private setUser(uid: string | null): void {
     useUserStore.getState().setUser(uid ? { uid } : null);
+
+    if (uid) {
+      userService.saveUser(uid).catch((error) => {
+        console.error("Failed to save user", error);
+      });
+    }
   }
 }
 

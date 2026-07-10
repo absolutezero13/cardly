@@ -1,8 +1,11 @@
 import { getAuth } from "@react-native-firebase/auth";
 import axios from "axios";
+import { Platform } from "react-native";
+
+const devApiHost = Platform.OS === "android" ? "10.0.2.2" : "localhost";
 
 const api = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL,
+  baseURL: process.env.EXPO_PUBLIC_API_URL ?? `http://${devApiHost}:3000`,
   headers: {
     "Content-Type": "application/json",
   },
