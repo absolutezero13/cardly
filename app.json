@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.absolutezero13.cardly"
+      "bundleIdentifier": "com.absolutezero13.cardly",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +20,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.absolutezero13.cardly"
+      "package": "com.absolutezero13.cardly",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "single",
@@ -37,7 +39,18 @@
       ],
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
-      "expo-build-properties"
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "forceStaticLinking": [
+              "RNFBApp",
+              "RNFBAuth"
+            ]
+          }
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true
