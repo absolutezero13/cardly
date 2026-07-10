@@ -187,7 +187,13 @@ PODS:
     - ExpoModulesCore
   - ExpoFont (57.0.0):
     - ExpoModulesCore
+  - ExpoGlassEffect (57.0.0):
+    - ExpoModulesCore
+  - ExpoImage (57.0.0):
+    - ExpoModulesCore
   - ExpoKeepAwake (57.0.0):
+    - ExpoModulesCore
+  - ExpoLinearGradient (57.0.0):
     - ExpoModulesCore
   - ExpoLogBox (57.0.0):
     - React-Core
@@ -222,6 +228,8 @@ PODS:
     - ExpoModulesCore
     - ExpoModulesJSI
   - ExpoSplashScreen (57.0.2):
+    - ExpoModulesCore
+  - ExpoSymbols (57.0.0):
     - ExpoModulesCore
   - ExpoSystemUI (57.0.0):
     - ExpoModulesCore
@@ -2324,12 +2332,16 @@ DEPENDENCIES:
   - "ExpoDomWebView (from `../node_modules/@expo/dom-webview/ios`)"
   - ExpoFileSystem (from `../node_modules/expo-file-system/ios/ExpoFileSystem.podspec`)
   - ExpoFont (from `../node_modules/expo-font/ios/ExpoFont.podspec`)
+  - ExpoGlassEffect (from `../node_modules/expo-glass-effect/ios`)
+  - ExpoImage (from `../node_modules/expo-image/ios/ExpoImage.podspec`)
   - ExpoKeepAwake (from `../node_modules/expo-keep-awake/ios`)
+  - ExpoLinearGradient (from `../node_modules/expo-linear-gradient/ios`)
   - "ExpoLogBox (from `../node_modules/@expo/log-box`)"
   - ExpoModulesCore (from `../node_modules/expo-modules-core/ExpoModulesCore.podspec`)
   - ExpoModulesJSI (from `../node_modules/expo-modules-jsi/apple`)
   - ExpoModulesWorklets (from `../node_modules/expo-modules-core/ExpoModulesWorklets.podspec`)
   - ExpoSplashScreen (from `../node_modules/expo-splash-screen/ios`)
+  - ExpoSymbols (from `../node_modules/expo-symbols/ios`)
   - ExpoSystemUI (from `../node_modules/expo-system-ui/ios`)
   - EXUpdatesInterface (from `../node_modules/expo-updates-interface/ios`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
@@ -2453,8 +2465,14 @@ EXTERNAL SOURCES:
     :podspec: "../node_modules/expo-file-system/ios/ExpoFileSystem.podspec"
   ExpoFont:
     :podspec: "../node_modules/expo-font/ios/ExpoFont.podspec"
+  ExpoGlassEffect:
+    :path: "../node_modules/expo-glass-effect/ios"
+  ExpoImage:
+    :podspec: "../node_modules/expo-image/ios/ExpoImage.podspec"
   ExpoKeepAwake:
     :path: "../node_modules/expo-keep-awake/ios"
+  ExpoLinearGradient:
+    :path: "../node_modules/expo-linear-gradient/ios"
   ExpoLogBox:
     :path: "../node_modules/@expo/log-box"
   ExpoModulesCore:
@@ -2465,6 +2483,8 @@ EXTERNAL SOURCES:
     :podspec: "../node_modules/expo-modules-core/ExpoModulesWorklets.podspec"
   ExpoSplashScreen:
     :path: "../node_modules/expo-splash-screen/ios"
+  ExpoSymbols:
+    :path: "../node_modules/expo-symbols/ios"
   ExpoSystemUI:
     :path: "../node_modules/expo-system-ui/ios"
   EXUpdatesInterface:
@@ -2644,12 +2664,16 @@ SPEC CHECKSUMS:
   ExpoDomWebView: 73ba90107a5acc0017a09b06e66d8eb238e089b8
   ExpoFileSystem: ffcd56066188802f263254b6b2e60f74b6a0bdae
   ExpoFont: 35fd7ad72f697d3a9656545909972d8b9f60d5da
+  ExpoGlassEffect: 72e96f2f6cae69f970238b80656d869d1a9a98ff
+  ExpoImage: 65b2a2279aab4791eb242156a4bd9b891fab8d12
   ExpoKeepAwake: 8a96e2075b75641001f55393d7e6600a5b808f09
+  ExpoLinearGradient: cb6781ae9bd07bcb2ab58221ce7612aadd81e1f4
   ExpoLogBox: b39a76aab749833d58111c3be1264bb90f3b92d4
   ExpoModulesCore: 399d34cb59b3e40d6953e9048442a726f212f641
   ExpoModulesJSI: f87a4c062180ad858523df636ecc7bee1261926a
   ExpoModulesWorklets: f6b71b8ddeb8dceb2ce3504544ecfbd708ba79a2
   ExpoSplashScreen: ba6bd4b92a47f5da3cd70d82d33fcd8407be9d70
+  ExpoSymbols: db28b9ea52c96fe67ff9c362f5dbc6bee240ca2d
   ExpoSystemUI: 4f343f83e81951d737b199ac9c0d9db0d577f942
   EXUpdatesInterface: 492cdb30f3889cc35d9e737a4b5fc3aec39d1131
   FBLazyVector: b3e7ad108f0d882e30445c5527d774e3fd432f3d

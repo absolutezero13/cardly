@@ -1,27 +1,32 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet } from "react-native";
 
-import { Colors, Layout, Typography } from '@/theme/Theme';
+import CardSection from "@/components/cards/CardSection";
+import Screen from "@/components/Screen";
+import { popularCards, trendingCards } from "@/data/mockCards";
+import { Layout, Spacing, scale } from "@/theme/Theme";
 
 const HomeScreen = () => {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>cardly</Text>
-    </View>
+    <Screen
+      title="Home"
+      subtitle="Track what's hot and what collectors are chasing."
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <CardSection cards={trendingCards} title="Trending" />
+        <CardSection cards={popularCards} title="Most Popular" />
+      </ScrollView>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Layout.screenHorizontalPadding,
-    paddingVertical: Layout.screenVerticalPadding,
-    backgroundColor: Colors.background,
-  },
-  title: {
-    ...Typography.title,
-    color: Colors.text,
+  scrollContent: {
+    gap: Layout.sectionGap,
+    paddingBottom: scale(120),
+    paddingTop: Spacing.lg,
   },
 });
 

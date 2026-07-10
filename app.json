@@ -48,7 +48,8 @@
             ]
           }
         }
-      ]
+      ],
+      "expo-image"
     ],
     "experiments": {
       "reactCompiler": true
