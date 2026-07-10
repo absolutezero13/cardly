@@ -1,24 +1,27 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  NavigationContainer,
-} from "@react-navigation/native";
+import { NavigationContainer } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
+  StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import RootNavigation from "./navigation/RootNavigation";
 import auth from "./services/auth";
 import useUserStore from "./stores/UserStore";
+import {
+  Colors,
+  Layout,
+  NavigationTheme,
+  Radii,
+  Spacing,
+  Typography,
+} from "./theme/Theme";
 
 const App = () => {
-  const colorScheme = useColorScheme();
   const user = useUserStore((state) => state.user);
   const [authFailed, setAuthFailed] = useState(false);
 
@@ -40,19 +43,26 @@ const App = () => {
   if (!user) {
     return (
       <SafeAreaProvider>
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor={Colors.background}
+        />
         <View style={styles.authContainer}>
           {authFailed ? (
             <>
-              <Text>Unable to start Cardly.</Text>
+              <Text style={styles.authMessage}>Unable to start Cardly.</Text>
               <Pressable
                 onPress={retryAuthentication}
-                style={styles.retryButton}
+                style={({ pressed }) => [
+                  styles.retryButton,
+                  pressed && styles.retryButtonPressed,
+                ]}
               >
-                <Text>Try again</Text>
+                <Text style={styles.retryButtonText}>Try again</Text>
               </Pressable>
             </>
           ) : (
-            <ActivityIndicator />
+            <ActivityIndicator color={Colors.primary} />
           )}
         </View>
       </SafeAreaProvider>
@@ -61,9 +71,11 @@ const App = () => {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer
-        theme={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-      >
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={Colors.background}
+      />
+      <NavigationContainer theme={NavigationTheme}>
         <RootNavigation />
       </NavigationContainer>
     </SafeAreaProvider>
@@ -75,11 +87,27 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 16,
+    gap: Spacing.lg,
+    paddingHorizontal: Layout.screenHorizontalPadding,
+    backgroundColor: Colors.background,
+  },
+  authMessage: {
+    ...Typography.body,
+    color: Colors.text,
   },
   retryButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    minHeight: Layout.minimumTouchSize,
+    justifyContent: "center",
+    paddingHorizontal: Spacing.xl,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.surfaceElevated,
+  },
+  retryButtonPressed: {
+    backgroundColor: Colors.primaryPressed,
+  },
+  retryButtonText: {
+    ...Typography.button,
+    color: Colors.text,
   },
 });
 
