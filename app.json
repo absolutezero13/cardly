@@ -31,7 +31,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#07111F",
-          "image": "./assets/images/CardlyIcon.png",
+          "image": "./assets/images/CardlySplashIcon.png",
           "imageWidth": 180
         }
       ],

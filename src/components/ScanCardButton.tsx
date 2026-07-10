@@ -1,7 +1,4 @@
-import {
-  GlassView,
-  isGlassEffectAPIAvailable,
-} from "expo-glass-effect";
+import { GlassView, isGlassEffectAPIAvailable } from "expo-glass-effect";
 import { SymbolView } from "expo-symbols";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TAB_BAR_HEIGHT } from "@/navigation/constants";
 import { Colors, Radii, Spacing, scale } from "@/theme/Theme";
 
-const BUTTON_SIZE = scale(64);
+const BUTTON_SIZE = scale(72);
 
 const ScanCardButton = () => {
   const { bottom, right } = useSafeAreaInsets();
@@ -40,16 +37,15 @@ const ScanCardButton = () => {
             isInteractive
             colorScheme="dark"
             glassEffectStyle="regular"
-            tintColor={`${Colors.primary}40`}
             style={styles.glassButton}
           >
             <SymbolView
               name={{
-                ios: "camera.viewfinder",
+                ios: "barcode.viewfinder",
                 android: "document_scanner",
                 web: "document_scanner",
               }}
-              size={scale(28)}
+              size={scale(42)}
               tintColor={Colors.text}
             />
           </GlassView>
