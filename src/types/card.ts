@@ -7,5 +7,5 @@ export type TradingCard = {
   rarity: CardRarity;
   price: number;
   trend?: number;
-  imageUrl: string;
+  imageSource: number;
 };

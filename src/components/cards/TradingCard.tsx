@@ -45,7 +45,7 @@ const TradingCard = ({ card, onPress }: TradingCardProps) => {
       <View style={styles.artFrame}>
         <Image
           contentFit="cover"
-          source={{ uri: card.imageUrl }}
+          source={card.imageSource}
           style={styles.artImage}
           transition={200}
         />
