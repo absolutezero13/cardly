@@ -25,7 +25,7 @@ const TabBarNavigation = () => {
           tabBarIcon: () =>
             Platform.select({
               ios: { sfSymbol: "creditcard" },
-              default: require("../../assets/images/tabIcons/home.png"),
+              default: require("../../assets/images/CardlyIcon.png"),
             }),
         }}
       />
