@@ -18,7 +18,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.absolutezero13.cardly"
     },
     "web": {
       "output": "single",
@@ -33,7 +34,10 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ]
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "expo-build-properties"
     ],
     "experiments": {
       "reactCompiler": true
