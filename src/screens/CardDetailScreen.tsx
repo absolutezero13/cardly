@@ -196,6 +196,7 @@ const CardDetailScreen = ({ navigation, route }: Props) => {
             >
               {frontUri ? (
                 <Image
+                  cachePolicy="memory-disk"
                   contentFit="cover"
                   source={{ uri: frontUri }}
                   style={styles.cardImage}
@@ -228,6 +229,7 @@ const CardDetailScreen = ({ navigation, route }: Props) => {
             >
               {backUri ? (
                 <Image
+                  cachePolicy="memory-disk"
                   contentFit="cover"
                   source={{ uri: backUri }}
                   style={styles.cardImage}

@@ -46,10 +46,10 @@ const HistoryCardItem = ({
       <View style={styles.thumbnailFrame}>
         {imageUri ? (
           <Image
+            cachePolicy="memory-disk"
             contentFit="cover"
             source={{ uri: imageUri }}
             style={styles.thumbnail}
-            transition={200}
           />
         ) : (
           <SymbolView

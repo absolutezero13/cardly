@@ -1,4 +1,8 @@
 import api from "@/api";
+import {
+  deleteOptimizedCardImage,
+  optimizeCardImagePair,
+} from "@/services/cardImageOptimization";
 import type { ScanCardResult } from "@/services/scan";
 import type { CardRarity } from "@/types/card";
 import {
@@ -71,14 +75,6 @@ const cardError = (error: unknown, fallback: string) => {
 };
 
 const CARD_IMAGES_DIRECTORY = "card-images";
-const IMAGE_CONTENT_TYPES: Record<string, string> = {
-  heic: "image/heic",
-  heif: "image/heif",
-  jpeg: "image/jpeg",
-  jpg: "image/jpeg",
-  png: "image/png",
-  webp: "image/webp",
-};
 
 type UploadedCardImages = {
   frontImageUrl: string;
@@ -98,12 +94,6 @@ export const cardImageUri = (imagePath: string | null): string | null => {
   }
 
   return new File(Paths.document, imagePath).uri;
-};
-
-const imageExtension = (sourceUri: string): string => {
-  const extension = sourceUri.split("?")[0].split(".").pop()?.toLowerCase();
-
-  return extension && IMAGE_CONTENT_TYPES[extension] ? extension : "jpg";
 };
 
 const deleteStorageObjects = async (storagePaths: string[]) => {
@@ -129,42 +119,51 @@ const uploadScanImages = async (
   uploadId: string,
   images: CardImages,
 ): Promise<UploadedCardImages> => {
-  const storage = getStorage();
-  const frontExtension = imageExtension(images.frontUri);
-  const backExtension = imageExtension(images.backUri);
-  const storagePaths: [string, string] = [
-    `${CARD_IMAGES_DIRECTORY}/${ownerId}/${uploadId}/front.${frontExtension}`,
-    `${CARD_IMAGES_DIRECTORY}/${ownerId}/${uploadId}/back.${backExtension}`,
-  ];
-  const frontRef = ref(storage, storagePaths[0]);
-  const backRef = ref(storage, storagePaths[1]);
-  const uploadResults = await Promise.allSettled([
-    putFile(frontRef, images.frontUri, {
-      contentType: IMAGE_CONTENT_TYPES[frontExtension],
-    }),
-    putFile(backRef, images.backUri, {
-      contentType: IMAGE_CONTENT_TYPES[backExtension],
-    }),
-  ]);
-
-  if (uploadResults.some((result) => result.status === "rejected")) {
-    await deleteStorageObjects(storagePaths);
-    throw new CardServiceError(
-      "Could not upload the card images. Check your connection and try again.",
-    );
-  }
+  const [frontImage, backImage] = await optimizeCardImagePair(
+    images.frontUri,
+    images.backUri,
+  );
 
   try {
-    const [frontImageUrl, backImageUrl] = await Promise.all([
-      getDownloadURL(frontRef),
-      getDownloadURL(backRef),
-    ]);
+    const storage = getStorage();
+    const storagePaths: [string, string] = [
+      `${CARD_IMAGES_DIRECTORY}/${ownerId}/${uploadId}/front.jpg`,
+      `${CARD_IMAGES_DIRECTORY}/${ownerId}/${uploadId}/back.jpg`,
+    ];
+    const frontRef = ref(storage, storagePaths[0]);
+    const backRef = ref(storage, storagePaths[1]);
 
-    return { frontImageUrl, backImageUrl, storagePaths };
-  } catch (error) {
-    await deleteStorageObjects(storagePaths);
-    console.warn("[Cards] Could not get card image download URLs", error);
-    throw new CardServiceError("Could not prepare the uploaded card images.");
+    try {
+      const uploadResults = await Promise.allSettled([
+        putFile(frontRef, frontImage.uri, { contentType: "image/jpeg" }),
+        putFile(backRef, backImage.uri, { contentType: "image/jpeg" }),
+      ]);
+
+      if (uploadResults.some((result) => result.status === "rejected")) {
+        throw new CardServiceError(
+          "Could not upload the card images. Check your connection and try again.",
+        );
+      }
+
+      const [frontImageUrl, backImageUrl] = await Promise.all([
+        getDownloadURL(frontRef),
+        getDownloadURL(backRef),
+      ]);
+
+      return { frontImageUrl, backImageUrl, storagePaths };
+    } catch (error) {
+      await deleteStorageObjects(storagePaths);
+
+      if (error instanceof CardServiceError) {
+        throw error;
+      }
+
+      console.warn("[Cards] Could not get card image download URLs", error);
+      throw new CardServiceError("Could not prepare the uploaded card images.");
+    }
+  } finally {
+    deleteOptimizedCardImage(frontImage);
+    deleteOptimizedCardImage(backImage);
   }
 };
 

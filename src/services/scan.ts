@@ -1,8 +1,11 @@
 import api from "@/api";
+import {
+  deleteOptimizedCardImage,
+  optimizeCardImagePair,
+  type OptimizedCardImage,
+} from "@/services/cardImageOptimization";
 import type { CardRarity } from "@/types/card";
 import { isAxiosError } from "axios";
-import { File } from "expo-file-system";
-import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 
 export type ScanCardPayload = {
   frontUri: string;
@@ -38,9 +41,6 @@ const IMAGE_TYPES: Record<string, string> = {
   webp: "image/webp",
 };
 
-const MAX_SCAN_IMAGE_WIDTH = 1600;
-const SCAN_IMAGE_COMPRESSION = 0.72;
-
 const fileForUri = (uri: string, side: "front" | "back"): ReactNativeFile => {
   const extension = uri
     .split("?")[0]
@@ -54,54 +54,6 @@ const fileForUri = (uri: string, side: "front" | "back"): ReactNativeFile => {
     name: `${side}.${safeExtension}`,
     type: IMAGE_TYPES[safeExtension],
   };
-};
-
-type OptimizedImage = {
-  file: File;
-  uri: string;
-};
-
-const bytesToMegabytes = (bytes: number) => bytes / (1024 * 1024);
-
-const optimizeImage = async (
-  uri: string,
-  side: "front" | "back",
-): Promise<OptimizedImage> => {
-  const originalSize = new File(uri).size;
-  const context = ImageManipulator.manipulate(uri);
-
-  context.resize({ width: MAX_SCAN_IMAGE_WIDTH });
-
-  try {
-    const renderedImage = await context.renderAsync();
-
-    try {
-      const result = await renderedImage.saveAsync({
-        compress: SCAN_IMAGE_COMPRESSION,
-        format: SaveFormat.JPEG,
-      });
-      const file = new File(result.uri);
-      const reduction = Math.max(0, 1 - file.size / originalSize);
-
-      console.log(
-        `[Card scan] ${side} image: ${bytesToMegabytes(originalSize).toFixed(2)} MB -> ${bytesToMegabytes(file.size).toFixed(2)} MB (${Math.round(reduction * 100)}% smaller)`,
-      );
-
-      return { file, uri: result.uri };
-    } finally {
-      renderedImage.release();
-    }
-  } finally {
-    context.release();
-  }
-};
-
-const deleteTemporaryImage = (image: OptimizedImage) => {
-  try {
-    image.file.delete();
-  } catch (error) {
-    console.warn("[Card scan] Could not delete temporary image", error);
-  }
 };
 
 export class ScanCardError extends Error {
@@ -120,19 +72,14 @@ class ScanService {
       throw new Error("Both card sides are required");
     }
 
-    const temporaryImages: OptimizedImage[] = [];
+    const temporaryImages: OptimizedCardImage[] = [];
 
     try {
-      const [front, back] = await Promise.all(
-        [
-          { uri: payload.frontUri, side: "front" as const },
-          { uri: payload.backUri, side: "back" as const },
-        ].map(async ({ uri, side }) => {
-          const optimizedImage = await optimizeImage(uri, side);
-          temporaryImages.push(optimizedImage);
-          return optimizedImage;
-        }),
+      const [front, back] = await optimizeCardImagePair(
+        payload.frontUri,
+        payload.backUri,
       );
+      temporaryImages.push(front, back);
       const formData = new FormData();
       formData.append(
         "front",
@@ -161,7 +108,7 @@ class ScanService {
 
       throw error;
     } finally {
-      temporaryImages.forEach(deleteTemporaryImage);
+      temporaryImages.forEach(deleteOptimizedCardImage);
     }
   }
 }
