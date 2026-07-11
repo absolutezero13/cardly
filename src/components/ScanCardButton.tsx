@@ -1,10 +1,10 @@
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useCameraPermissions } from "expo-camera";
 import { GlassView, isGlassEffectAPIAvailable } from "expo-glass-effect";
 import { SymbolView } from "expo-symbols";
 import { Alert, Linking, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useCameraPermission } from "react-native-vision-camera";
 
 import type { RootStackParamList } from "@/navigation/RootNavigation";
 import { TAB_BAR_HEIGHT } from "@/navigation/constants";
@@ -16,7 +16,7 @@ const ScanCardButton = () => {
   const { bottom, right } = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [permission, requestPermission] = useCameraPermissions();
+  const { hasPermission, requestPermission } = useCameraPermission();
   const isGlassAvailable = isGlassEffectAPIAvailable();
 
   const showSettingsAlert = () => {
@@ -31,21 +31,16 @@ const ScanCardButton = () => {
   };
 
   const handlePress = async () => {
-    if (permission?.granted) {
+    if (hasPermission) {
       navigation.navigate("ScanCard");
       return;
     }
 
-    if (permission && !permission.canAskAgain) {
-      showSettingsAlert();
-      return;
-    }
+    const wasGranted = await requestPermission();
 
-    const result = await requestPermission();
-
-    if (result.granted) {
+    if (wasGranted) {
       navigation.navigate("ScanCard");
-    } else if (!result.canAskAgain) {
+    } else {
       showSettingsAlert();
     }
   };

@@ -59,10 +59,11 @@
         }
       ],
       [
-        "expo-camera",
+        "react-native-vision-camera",
         {
-          "cameraPermission": "Cardly uses your camera to capture the front and back of your trading cards.",
-          "recordAudioAndroid": false
+          "cameraPermissionText": "Cardly uses your camera to capture the front and back of your trading cards.",
+          "enableFrameProcessors": false,
+          "enableMicrophonePermission": false
         }
       ]
     ],

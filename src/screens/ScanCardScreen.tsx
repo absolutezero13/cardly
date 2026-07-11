@@ -1,6 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useRef, useState } from "react";
 import {
@@ -13,6 +12,12 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  Camera,
+  useCameraDevice,
+  useCameraFormat,
+  useCameraPermission,
+} from "react-native-vision-camera";
 
 import AppButton from "@/components/AppButton";
 import IconButton from "@/components/IconButton";
@@ -30,6 +35,7 @@ import {
 } from "@/theme/Theme";
 
 type CardSide = "front" | "back";
+type ZoomLevel = 1 | 2;
 
 const SIDES: { side: CardSide; label: string }[] = [
   { side: "front", label: "Front" },
@@ -43,6 +49,8 @@ const BRACKET_SIZE = scale(30);
 const BRACKET_THICKNESS = scale(3.5);
 const SHUTTER_SIZE = scale(76);
 const CONTROL_SIZE = scale(52);
+const SIDE_CONTROL_WIDTH = scale(92);
+const ZOOM_LEVELS: ZoomLevel[] = [1, 2];
 
 const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
   mediaTypes: "images",
@@ -55,14 +63,24 @@ const ScanCardScreen = () => {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const cameraRef = useRef<CameraView>(null);
-  const [permission] = useCameraPermissions();
+  const { hasPermission } = useCameraPermission();
+  const cameraRef = useRef<Camera>(null);
+  const cameraDevice = useCameraDevice("back", {
+    physicalDevices: ["wide-angle-camera"],
+  });
+  const cameraFormat = useCameraFormat(cameraDevice, [
+    { photoResolution: { width: 1280, height: 960 } },
+    { photoAspectRatio: 4 / 3 },
+  ]);
 
   const [images, setImages] = useState<Record<CardSide, string | null>>({
     front: null,
     back: null,
   });
   const [activeSide, setActiveSide] = useState<CardSide>("front");
+  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(1);
+  const [isTorchEnabled, setIsTorchEnabled] = useState(false);
+  const [isCameraReady, setIsCameraReady] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isIdentifying, setIsIdentifying] = useState(false);
 
@@ -71,6 +89,9 @@ const ScanCardScreen = () => {
   const frameHeight = frameWidth / CARD_ASPECT_RATIO;
   const topPadding = Math.max(insets.top, Spacing.lg) + Spacing.sm;
   const bottomPadding = Math.max(insets.bottom, Spacing.lg) + Spacing.sm;
+  const cameraZoom = cameraDevice
+    ? Math.min(Math.max(zoomLevel, cameraDevice.minZoom), cameraDevice.maxZoom)
+    : 1;
 
   const assignImage = (uri: string) => {
     const next = { ...images, [activeSide]: uri };
@@ -89,18 +110,27 @@ const ScanCardScreen = () => {
   };
 
   const handleCapture = async () => {
-    if (!cameraRef.current || isCapturing || isIdentifying) {
+    if (
+      !cameraRef.current ||
+      !isCameraReady ||
+      isCapturing ||
+      isIdentifying
+    ) {
       return;
     }
 
     setIsCapturing(true);
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.6 });
+      const photo = await cameraRef.current.takePhoto({
+        flash: "off",
+        enableAutoDistortionCorrection: false,
+      });
+      const photoUri = photo.path.startsWith("file://")
+        ? photo.path
+        : `file://${photo.path}`;
 
-      if (photo?.uri) {
-        assignImage(photo.uri);
-      }
+      assignImage(photoUri);
     } catch {
       Alert.alert(
         "Capture failed",
@@ -164,7 +194,7 @@ const ScanCardScreen = () => {
 
   // The scan button requests camera permission natively before navigating
   // here, so this fallback only appears if access was revoked mid-session.
-  if (!permission?.granted) {
+  if (!hasPermission) {
     return (
       <View style={[styles.root, { paddingTop: topPadding }]}>
         <View style={styles.fallbackHeader}>{closeButton}</View>
@@ -187,12 +217,31 @@ const ScanCardScreen = () => {
     return <ScanLoadingScreen frontUri={images.front} backUri={images.back} />;
   }
 
+  if (!cameraDevice) {
+    return (
+      <View style={[styles.root, { paddingTop: topPadding }]}>
+        <View style={styles.fallbackHeader}>{closeButton}</View>
+        <View style={styles.fallbackContent}>
+          <Text style={styles.fallbackText}>No back camera was found.</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.root}>
-      <CameraView
+      <Camera
+        device={cameraDevice}
+        format={cameraFormat}
+        isActive
+        onInitialized={() => setIsCameraReady(true)}
+        onStopped={() => setIsCameraReady(false)}
+        photo
+        photoQualityBalance="speed"
         ref={cameraRef}
-        facing="back"
         style={StyleSheet.absoluteFill}
+        torch={isTorchEnabled && cameraDevice.hasTorch ? "on" : "off"}
+        zoom={cameraZoom}
       />
 
       <View style={styles.mask}>
@@ -212,7 +261,25 @@ const ScanCardScreen = () => {
                 />
               ))}
             </View>
-            <View style={styles.topBarSpacer} />
+            <IconButton
+              accessibilityLabel={`Turn flash ${isTorchEnabled ? "off" : "on"}`}
+              disabled={
+                !cameraDevice.hasTorch || isCapturing || isIdentifying
+              }
+              icon={
+                isTorchEnabled
+                  ? { ios: "bolt.fill", android: "flash_on", web: "flash_on" }
+                  : {
+                      ios: "bolt.slash",
+                      android: "flash_off",
+                      web: "flash_off",
+                    }
+              }
+              iconSize={scale(19)}
+              onPress={() => setIsTorchEnabled((current) => !current)}
+              size={CONTROL_SIZE}
+              tintColor={isTorchEnabled ? Colors.primary : Colors.text}
+            />
           </View>
         </View>
 
@@ -252,17 +319,19 @@ const ScanCardScreen = () => {
             ) : null}
 
             <View style={styles.controlsRow}>
-              <IconButton
-                accessibilityLabel="Choose from library"
-                icon={{
-                  ios: "photo.on.rectangle",
-                  android: "photo_library",
-                  web: "photo_library",
-                }}
-                iconSize={scale(22)}
-                onPress={handlePickFromLibrary}
-                size={CONTROL_SIZE}
-              />
+              <View style={styles.sideControl}>
+                <IconButton
+                  accessibilityLabel="Choose from library"
+                  icon={{
+                    ios: "photo.on.rectangle",
+                    android: "photo_library",
+                    web: "photo_library",
+                  }}
+                  iconSize={scale(22)}
+                  onPress={handlePickFromLibrary}
+                  size={CONTROL_SIZE}
+                />
+              </View>
 
               <Pressable
                 accessibilityLabel={`Take photo of card ${activeSide}`}
@@ -282,7 +351,42 @@ const ScanCardScreen = () => {
                 />
               </Pressable>
 
-              <View style={styles.controlsSpacer} />
+              <View style={[styles.sideControl, styles.sideControlEnd]}>
+                <View style={styles.zoomControl}>
+                  {ZOOM_LEVELS.map((level) => {
+                    const isActive = zoomLevel === level;
+
+                    return (
+                      <Pressable
+                        key={level}
+                        accessibilityLabel={`${level} times zoom`}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: isActive }}
+                        disabled={
+                          isCapturing ||
+                          isIdentifying ||
+                          (level === 2 && cameraDevice.maxZoom < 2)
+                        }
+                        onPress={() => setZoomLevel(level)}
+                        style={({ pressed }) => [
+                          styles.zoomOption,
+                          isActive && styles.zoomOptionActive,
+                          pressed && styles.zoomOptionPressed,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.zoomLabel,
+                            isActive && styles.zoomLabelActive,
+                          ]}
+                        >
+                          {level}×
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
             </View>
           </View>
         </View>
@@ -326,9 +430,6 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.lg,
-  },
-  topBarSpacer: {
-    width: CONTROL_SIZE,
   },
   slotsRow: {
     flexDirection: "row",
@@ -375,10 +476,51 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     gap: Spacing.lg,
   },
+  zoomControl: {
+    alignSelf: "center",
+    flexDirection: "row",
+    padding: scale(4),
+    gap: scale(2),
+    borderRadius: Radii.full,
+    borderCurve: "continuous",
+    backgroundColor: withOpacity(Colors.surface, 0.82),
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  zoomOption: {
+    minWidth: scale(44),
+    height: scale(36),
+    paddingHorizontal: Spacing.sm,
+    borderRadius: Radii.full,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  zoomOptionActive: {
+    backgroundColor: Colors.text,
+  },
+  zoomOptionPressed: {
+    opacity: 0.75,
+  },
+  zoomLabel: {
+    ...Typography.caption,
+    color: Colors.text,
+    fontWeight: "700",
+    fontVariant: ["tabular-nums"],
+  },
+  zoomLabelActive: {
+    color: Colors.black,
+  },
   controlsRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  sideControl: {
+    width: SIDE_CONTROL_WIDTH,
+    alignItems: "flex-start",
+  },
+  sideControlEnd: {
+    alignItems: "flex-end",
   },
   shutter: {
     width: SHUTTER_SIZE,
@@ -397,9 +539,6 @@ const styles = StyleSheet.create({
   },
   shutterInnerCapturing: {
     opacity: 0.5,
-  },
-  controlsSpacer: {
-    width: CONTROL_SIZE,
   },
   pressed: {
     transform: [{ scale: 0.96 }],

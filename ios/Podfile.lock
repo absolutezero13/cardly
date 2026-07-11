@@ -181,10 +181,6 @@ PODS:
     - Yoga
   - ExpoAsset (57.0.3):
     - ExpoModulesCore
-  - ExpoCamera (57.0.1):
-    - ExpoModulesCore
-  - ExpoCameraBarcodeScanning (57.0.1):
-    - ExpoCamera
   - ExpoCrypto (57.0.0):
     - ExpoModulesCore
   - ExpoDomWebView (57.0.0):
@@ -2361,6 +2357,12 @@ PODS:
     - ReactNativeDependencies
     - Yoga
   - SwiftUIIntrospect (1.3.0)
+  - VisionCamera (4.7.3):
+    - VisionCamera/Core (= 4.7.3)
+    - VisionCamera/React (= 4.7.3)
+  - VisionCamera/Core (4.7.3)
+  - VisionCamera/React (4.7.3):
+    - React-Core
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -2373,8 +2375,6 @@ DEPENDENCIES:
   - expo-dev-menu (from `../node_modules/expo-dev-menu`)
   - expo-dev-menu-interface (from `../node_modules/expo-dev-menu-interface/ios`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
-  - ExpoCamera (from `../node_modules/expo-camera/ios/ExpoCamera.podspec`)
-  - ExpoCameraBarcodeScanning (from `../node_modules/expo-camera/ios/ExpoCameraBarcodeScanning.podspec`)
   - ExpoCrypto (from `../node_modules/expo-crypto/ios`)
   - "ExpoDomWebView (from `../node_modules/@expo/dom-webview/ios`)"
   - ExpoFileSystem (from `../node_modules/expo-file-system/ios/ExpoFileSystem.podspec`)
@@ -2474,6 +2474,7 @@ DEPENDENCIES:
   - "RNFBAuth (from `../node_modules/@react-native-firebase/auth`)"
   - "RNFBStorage (from `../node_modules/@react-native-firebase/storage`)"
   - RNScreens (from `../node_modules/react-native-screens`)
+  - VisionCamera (from `../node_modules/react-native-vision-camera`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -2510,10 +2511,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-dev-menu-interface/ios"
   ExpoAsset:
     :path: "../node_modules/expo-asset/ios"
-  ExpoCamera:
-    :podspec: "../node_modules/expo-camera/ios/ExpoCamera.podspec"
-  ExpoCameraBarcodeScanning:
-    :podspec: "../node_modules/expo-camera/ios/ExpoCameraBarcodeScanning.podspec"
   ExpoCrypto:
     :path: "../node_modules/expo-crypto/ios"
   ExpoDomWebView:
@@ -2711,6 +2708,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-firebase/storage"
   RNScreens:
     :path: "../node_modules/react-native-screens"
+  VisionCamera:
+    :path: "../node_modules/react-native-vision-camera"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -2724,8 +2723,6 @@ SPEC CHECKSUMS:
   expo-dev-menu: c834085c744176cf72d4828cc6237ec7ed9a3406
   expo-dev-menu-interface: 7a59e803916fbfd1b96c75ff91ea8dddac7e722f
   ExpoAsset: 586e89aeaab2e23bfa90b9dce4d7d5e36815c039
-  ExpoCamera: d30fb3af6f5e97d1567c3b2d84413707a78d9005
-  ExpoCameraBarcodeScanning: 0cd97b138b31f7534201816611dd164543429b37
   ExpoCrypto: f9db7ec10f772afa112c0e465f34bedbc38adf5f
   ExpoDomWebView: 73ba90107a5acc0017a09b06e66d8eb238e089b8
   ExpoFileSystem: ffcd56066188802f263254b6b2e60f74b6a0bdae
@@ -2836,8 +2833,9 @@ SPEC CHECKSUMS:
   RNFBStorage: 75b98cc207ae10725c184c66fdefa0b37864557e
   RNScreens: 8d318eb8905fa1d3439a1ce5d567f82ae8245657
   SwiftUIIntrospect: fee9aa07293ee280373a591e1824e8ddc869ba5d
+  VisionCamera: 7187b3dac1ff3071234ead959ce311875748e14f
   Yoga: c30c859b7e9b75e547b600b486fe33165f60de00
 
-PODFILE CHECKSUM: 7f3b2df1697b10006230ea4fccbb7041bea27767
+PODFILE CHECKSUM: 41e5e8a12e7cd0f2685b0db17aa1bdd44b852248
 
 COCOAPODS: 1.16.2
