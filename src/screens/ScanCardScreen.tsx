@@ -4,6 +4,8 @@ import * as ImagePicker from "expo-image-picker";
 import { useRef, useState } from "react";
 import {
   Alert,
+  Animated,
+  Easing,
   Linking,
   Pressable,
   StyleSheet,
@@ -20,6 +22,10 @@ import {
 } from "react-native-vision-camera";
 
 import AppButton from "@/components/AppButton";
+import CaptureTransferAnimation, {
+  type CaptureTransfer,
+  type MeasuredRect,
+} from "@/components/CaptureTransferAnimation";
 import IconButton from "@/components/IconButton";
 import ScanCardSide from "@/components/ScanCardSide";
 import ScanLoadingScreen from "@/components/ScanLoadingScreen";
@@ -65,6 +71,11 @@ const ScanCardScreen = () => {
   const insets = useSafeAreaInsets();
   const { hasPermission } = useCameraPermission();
   const cameraRef = useRef<Camera>(null);
+  const frameRef = useRef<View>(null);
+  const sideRefs = useRef<Record<CardSide, View | null>>({
+    front: null,
+    back: null,
+  });
   const cameraDevice = useCameraDevice("back", {
     physicalDevices: ["wide-angle-camera"],
   });
@@ -80,9 +91,13 @@ const ScanCardScreen = () => {
   const [activeSide, setActiveSide] = useState<CardSide>("front");
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(1);
   const [isTorchEnabled, setIsTorchEnabled] = useState(false);
+  const [transferProgress] = useState(() => new Animated.Value(0));
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [isTransferring, setIsTransferring] = useState(false);
   const [isIdentifying, setIsIdentifying] = useState(false);
+  const [captureTransfer, setCaptureTransfer] =
+    useState<CaptureTransfer | null>(null);
 
   const isReady = Boolean(images.front && images.back);
   const frameWidth = width * FRAME_WIDTH_RATIO;
@@ -92,12 +107,53 @@ const ScanCardScreen = () => {
   const cameraZoom = cameraDevice
     ? Math.min(Math.max(zoomLevel, cameraDevice.minZoom), cameraDevice.maxZoom)
     : 1;
+  const captureHint = isReady
+    ? "Both sides captured"
+    : images.front && !images.back
+      ? "Front captured — now scan the back"
+      : images.back && !images.front
+        ? "Back captured — now scan the front"
+        : `Position the ${activeSide} of your card in the frame`;
 
-  const assignImage = (uri: string) => {
-    const next = { ...images, [activeSide]: uri };
-    const otherSide: CardSide = activeSide === "front" ? "back" : "front";
+  const measureView = (view: View | null) =>
+    new Promise<MeasuredRect | null>((resolve) => {
+      if (!view) {
+        resolve(null);
+        return;
+      }
+
+      view.measureInWindow((x, y, width, height) => {
+        resolve(width && height ? { x, y, width, height } : null);
+      });
+    });
+
+  const assignImage = async (uri: string, capturedSide = activeSide) => {
+    const [start, end] = await Promise.all([
+      measureView(frameRef.current),
+      measureView(sideRefs.current[capturedSide]),
+    ]);
+
+    if (start && end) {
+      setIsTransferring(true);
+      transferProgress.setValue(0);
+      setCaptureTransfer({ uri, start, end });
+
+      await new Promise<void>((resolve) => {
+        Animated.timing(transferProgress, {
+          toValue: 1,
+          duration: 420,
+          easing: Easing.bezier(0.2, 0, 0, 1),
+          useNativeDriver: true,
+        }).start(() => resolve());
+      });
+    }
+
+    const next = { ...images, [capturedSide]: uri };
+    const otherSide: CardSide = capturedSide === "front" ? "back" : "front";
 
     setImages(next);
+    setCaptureTransfer(null);
+    setIsTransferring(false);
 
     if (!next[otherSide]) {
       setActiveSide(otherSide);
@@ -119,6 +175,7 @@ const ScanCardScreen = () => {
       return;
     }
 
+    const capturedSide = activeSide;
     setIsCapturing(true);
 
     try {
@@ -130,7 +187,7 @@ const ScanCardScreen = () => {
         ? photo.path
         : `file://${photo.path}`;
 
-      assignImage(photoUri);
+      await assignImage(photoUri, capturedSide);
     } catch {
       Alert.alert(
         "Capture failed",
@@ -144,10 +201,14 @@ const ScanCardScreen = () => {
   // The system photo picker doesn't require a permission prompt on iOS or
   // Android, so it launches directly.
   const handlePickFromLibrary = async () => {
+    if (isCapturing || isTransferring || isIdentifying) {
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync(PICKER_OPTIONS);
 
     if (!result.canceled && result.assets?.[0]) {
-      assignImage(result.assets[0].uri);
+      await assignImage(result.assets[0].uri);
     }
   };
 
@@ -244,15 +305,21 @@ const ScanCardScreen = () => {
         zoom={cameraZoom}
       />
 
-      <View style={styles.mask}>
+      <View
+        pointerEvents={isTransferring ? "none" : "auto"}
+        style={styles.mask}
+      >
         <View style={styles.maskSection}>
           <View style={[styles.topBar, { paddingTop: topPadding }]}>
             {closeButton}
             <View style={styles.slotsRow}>
               {SIDES.map(({ side, label }) => (
                 <ScanCardSide
-                  key={side}
                   isActive={side === activeSide}
+                  key={side}
+                  ref={(view) => {
+                    sideRefs.current[side] = view;
+                  }}
                   label={label}
                   onRemove={() => removeImage(side)}
                   onSelect={() => setActiveSide(side)}
@@ -264,7 +331,10 @@ const ScanCardScreen = () => {
             <IconButton
               accessibilityLabel={`Turn flash ${isTorchEnabled ? "off" : "on"}`}
               disabled={
-                !cameraDevice.hasTorch || isCapturing || isIdentifying
+                !cameraDevice.hasTorch ||
+                isCapturing ||
+                isTransferring ||
+                isIdentifying
               }
               icon={
                 isTorchEnabled
@@ -281,11 +351,16 @@ const ScanCardScreen = () => {
               tintColor={isTorchEnabled ? Colors.primary : Colors.text}
             />
           </View>
+          <Text style={styles.hint}>{captureHint}</Text>
         </View>
 
         <View style={[styles.maskMiddle, { height: frameHeight }]}>
           <View style={styles.maskFill} />
-          <View style={[styles.frameOpening, { width: frameWidth }]}>
+          <View
+            collapsable={false}
+            ref={frameRef}
+            style={[styles.frameOpening, { width: frameWidth }]}
+          >
             <View style={[styles.bracket, styles.bracketTopLeft]} />
             <View style={[styles.bracket, styles.bracketTopRight]} />
             <View style={[styles.bracket, styles.bracketBottomLeft]} />
@@ -295,12 +370,6 @@ const ScanCardScreen = () => {
         </View>
 
         <View style={[styles.maskSection, styles.maskBottom]}>
-          <Text style={styles.hint}>
-            {isReady
-              ? "Both sides captured"
-              : `Position the ${activeSide} of your card in the frame`}
-          </Text>
-
           <View style={[styles.bottomArea, { paddingBottom: bottomPadding }]}>
             {isReady ? (
               <View>
@@ -336,7 +405,7 @@ const ScanCardScreen = () => {
               <Pressable
                 accessibilityLabel={`Take photo of card ${activeSide}`}
                 accessibilityRole="button"
-                disabled={isCapturing || isIdentifying}
+                disabled={isCapturing || isTransferring || isIdentifying}
                 onPress={handleCapture}
                 style={({ pressed }) => [
                   styles.shutter,
@@ -364,6 +433,7 @@ const ScanCardScreen = () => {
                         accessibilityState={{ selected: isActive }}
                         disabled={
                           isCapturing ||
+                          isTransferring ||
                           isIdentifying ||
                           (level === 2 && cameraDevice.maxZoom < 2)
                         }
@@ -391,6 +461,13 @@ const ScanCardScreen = () => {
           </View>
         </View>
       </View>
+
+      {captureTransfer ? (
+        <CaptureTransferAnimation
+          progress={transferProgress}
+          transfer={captureTransfer}
+        />
+      ) : null}
     </View>
   );
 };
@@ -423,7 +500,7 @@ const styles = StyleSheet.create({
     backgroundColor: DIM_COLOR,
   },
   maskBottom: {
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
   },
   topBar: {
     flexDirection: "row",
