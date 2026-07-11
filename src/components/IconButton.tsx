@@ -1,4 +1,4 @@
-import { Colors, Radii, scale } from "@/theme/Theme";
+import { Colors, Radii, scale, withOpacity } from "@/theme/Theme";
 import { GlassView, isGlassEffectAPIAvailable } from "expo-glass-effect";
 import { SymbolView } from "expo-symbols";
 import type { ComponentProps } from "react";
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   fallback: {
-    backgroundColor: "rgba(13, 27, 45, 0.82)",
+    backgroundColor: withOpacity(Colors.surface, 0.82),
     borderWidth: 1,
     borderColor: Colors.border,
   },

@@ -17,7 +17,14 @@ import AppButton from "@/components/AppButton";
 import IconButton from "@/components/IconButton";
 import ScanCardSide from "@/components/ScanCardSide";
 import scanService from "@/services/scan";
-import { Colors, Radii, Spacing, Typography, scale } from "@/theme/Theme";
+import {
+  Colors,
+  Radii,
+  Spacing,
+  Typography,
+  scale,
+  withOpacity,
+} from "@/theme/Theme";
 
 type CardSide = "front" | "back";
 
@@ -28,7 +35,7 @@ const SIDES: { side: CardSide; label: string }[] = [
 
 const CARD_ASPECT_RATIO = 0.72;
 const FRAME_WIDTH_RATIO = 0.74;
-const DIM_COLOR = "rgba(4, 10, 20, 0.55)";
+const DIM_COLOR = withOpacity(Colors.cameraOverlay, 0.55);
 const BRACKET_SIZE = scale(30);
 const BRACKET_THICKNESS = scale(3.5);
 const SHUTTER_SIZE = scale(76);
@@ -273,7 +280,7 @@ const ScanCardScreen = () => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: Colors.black,
   },
   mask: {
     position: "absolute",

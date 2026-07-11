@@ -2,7 +2,14 @@ import { Image } from "expo-image";
 import { SymbolView } from "expo-symbols";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Colors, Radii, Spacing, Typography, scale } from "@/theme/Theme";
+import {
+  Colors,
+  Radii,
+  Spacing,
+  Typography,
+  scale,
+  withOpacity,
+} from "@/theme/Theme";
 
 type ScanCardSideProps = {
   label: string;
@@ -80,11 +87,11 @@ const styles = StyleSheet.create({
     borderCurve: "continuous",
     borderWidth: 1.5,
     borderStyle: "dashed",
-    borderColor: "rgba(255, 255, 255, 0.4)",
+    borderColor: withOpacity(Colors.white, 0.4),
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    backgroundColor: "rgba(13, 27, 45, 0.85)",
+    backgroundColor: withOpacity(Colors.surface, 0.85),
   },
   filled: {
     borderStyle: "solid",
@@ -105,7 +112,7 @@ const styles = StyleSheet.create({
     borderRadius: Radii.full,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(5, 12, 22, 0.82)",
+    backgroundColor: withOpacity(Colors.background, 0.82),
   },
 
   label: {

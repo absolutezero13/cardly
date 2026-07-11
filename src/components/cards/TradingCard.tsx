@@ -9,6 +9,7 @@ import {
   Spacing,
   Typography,
   scale,
+  withOpacity,
 } from "@/theme/Theme";
 
 const CARD_WIDTH = scale(140);
@@ -92,7 +93,7 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: Radii.md - 1,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: withOpacity(Colors.white, 0.1),
   },
   rarityBadge: {
     position: "absolute",
@@ -101,7 +102,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderRadius: Radii.sm,
-    backgroundColor: "rgba(7, 17, 31, 0.72)",
+    backgroundColor: withOpacity(Colors.background, 0.72),
     borderWidth: 1,
     borderColor: Colors.border,
   },
@@ -117,9 +118,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderRadius: Radii.sm,
-    backgroundColor: "rgba(94, 143, 232, 0.24)",
+    backgroundColor: withOpacity(Colors.primary, 0.24),
     borderWidth: 1,
-    borderColor: "rgba(94, 143, 232, 0.4)",
+    borderColor: withOpacity(Colors.primary, 0.4),
   },
   trendText: {
     ...Typography.caption,

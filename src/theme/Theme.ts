@@ -9,24 +9,49 @@ const scaleFactor = Math.min(
   Math.max(screenWidth / REFERENCE_SCREEN_WIDTH, MINIMUM_SCALE),
   MAXIMUM_SCALE,
 );
-const navigationFontFamily = Platform.select({
-  ios: "System",
-  default: "sans-serif",
-}) ?? "sans-serif";
+const navigationFontFamily =
+  Platform.select({
+    ios: "System",
+    default: "sans-serif",
+  }) ?? "sans-serif";
 
 export const scale = (value: number) =>
   PixelRatio.roundToNearestPixel(value * scaleFactor);
 
+export const withOpacity = (color: string, opacity: number) => {
+  const channels = color.match(
+    /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/,
+  );
+
+  if (!channels) {
+    throw new Error(
+      `withOpacity expects an rgb(red, green, blue) color, received ${color}`,
+    );
+  }
+
+  const [, red, green, blue] = channels;
+  const clampedOpacity = Math.min(1, Math.max(0, opacity));
+
+  return `rgba(${red}, ${green}, ${blue}, ${clampedOpacity})`;
+};
+
+const Palette = {
+  black: "rgb(0, 0, 0)",
+  white: "rgb(255, 255, 255)",
+  background: "rgb(7, 17, 31)",
+  cameraOverlay: "rgb(4, 10, 20)",
+  surface: "rgb(13, 27, 45)",
+  surfaceElevated: "rgb(20, 38, 61)",
+  primary: "rgb(94, 143, 232)",
+  primaryPressed: "rgb(75, 120, 206)",
+  text: "rgb(244, 247, 252)",
+  textMuted: "rgb(145, 162, 184)",
+  danger: "rgb(240, 116, 131)",
+};
+
 export const Colors = {
-  background: "#07111F",
-  surface: "#0D1B2D",
-  surfaceElevated: "#14263D",
-  primary: "#5E8FE8",
-  primaryPressed: "#4B78CE",
-  text: "#F4F7FC",
-  textMuted: "#91A2B8",
-  border: "rgba(255, 255, 255, 0.08)",
-  danger: "#F07483",
+  ...Palette,
+  border: withOpacity(Palette.white, 0.08),
 };
 
 export const Spacing = {

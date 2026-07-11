@@ -9,7 +9,14 @@ import {
   View,
 } from "react-native";
 
-import { Colors, Radii, Spacing, Typography, scale } from "@/theme/Theme";
+import {
+  Colors,
+  Radii,
+  Spacing,
+  Typography,
+  scale,
+  withOpacity,
+} from "@/theme/Theme";
 
 type AppButtonProps = {
   label: string;
@@ -80,9 +87,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   fallback: {
-    backgroundColor: "rgba(94, 143, 232, 0.88)",
+    backgroundColor: withOpacity(Colors.primary, 0.88),
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.18)",
+    borderColor: withOpacity(Colors.white, 0.18),
   },
   content: {
     flexDirection: "row",
