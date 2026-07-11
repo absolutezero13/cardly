@@ -17,6 +17,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppButton from "@/components/AppButton";
 import IconButton from "@/components/IconButton";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
+import cardService, { CardServiceError } from "@/services/cards";
+import useUserStore from "@/stores/UserStore";
+import { rarityLabels } from "@/types/card";
 import {
   Colors,
   Layout,
@@ -29,18 +32,13 @@ import {
 
 type Props = NativeStackScreenProps<RootStackParamList, "ScanResult">;
 
-const rarityLabels = {
-  common: "Common",
-  uncommon: "Uncommon",
-  rare: "Rare",
-  mythic: "Mythic",
-};
-
 const ScanResultScreen = ({ navigation, route }: Props) => {
   const insets = useSafeAreaInsets();
   const { result, frontUri, backUri } = route.params;
+  const ownerId = useUserStore((state) => state.user?.uid);
   const [cardSwapProgress] = useState(() => new Animated.Value(0));
   const [isBackActive, setIsBackActive] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const confidence = Math.round(
     Math.min(1, Math.max(0, result.confidence)) * 100,
   );
@@ -62,11 +60,27 @@ const ScanResultScreen = ({ navigation, route }: Props) => {
       ],
     );
   };
-  const handleSave = () => {
-    Alert.alert(
-      "Save to history",
-      "History saving will be connected in the next step.",
-    );
+  const handleSave = async () => {
+    if (!ownerId || isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      await cardService.saveScannedCard(ownerId, result, {
+        frontUri,
+        backUri,
+      });
+      close();
+    } catch (error) {
+      Alert.alert(
+        "Could not save card",
+        error instanceof CardServiceError ? error.message : "Please try again.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
   const swapCards = () => {
     const nextIsBackActive = !isBackActive;
@@ -255,7 +269,8 @@ const ScanResultScreen = ({ navigation, route }: Props) => {
         <AppButton
           icon={{ ios: "bookmark.fill", android: "bookmark", web: "bookmark" }}
           label="Save"
-          onPress={handleSave}
+          loading={isSaving}
+          onPress={() => void handleSave()}
         />
       </ScrollView>
 

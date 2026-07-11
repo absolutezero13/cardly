@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import type { TradingCard as TradingCardType } from "@/types/card";
+import { rarityLabels, type TradingCard as TradingCardType } from "@/types/card";
 import {
   Colors,
   Layout,
@@ -18,13 +18,6 @@ const CARD_HEIGHT = scale(196);
 type TradingCardProps = {
   card: TradingCardType;
   onPress?: () => void;
-};
-
-const rarityLabels: Record<TradingCardType["rarity"], string> = {
-  common: "Common",
-  uncommon: "Uncommon",
-  rare: "Rare",
-  mythic: "Mythic",
 };
 
 const formatPrice = (price: number) => {
