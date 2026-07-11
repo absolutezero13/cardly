@@ -1,8 +1,16 @@
 import api from "@/api";
 import type { ScanCardResult } from "@/services/scan";
 import type { CardRarity } from "@/types/card";
+import {
+  deleteObject,
+  getDownloadURL,
+  getStorage,
+  putFile,
+  ref,
+} from "@react-native-firebase/storage";
 import { isAxiosError } from "axios";
-import { Directory, File, Paths } from "expo-file-system";
+import { randomUUID } from "expo-crypto";
+import { File, Paths } from "expo-file-system";
 
 export type UserCard = {
   _id: string;
@@ -63,9 +71,23 @@ const cardError = (error: unknown, fallback: string) => {
 };
 
 const CARD_IMAGES_DIRECTORY = "card-images";
+const IMAGE_CONTENT_TYPES: Record<string, string> = {
+  heic: "image/heic",
+  heif: "image/heif",
+  jpeg: "image/jpeg",
+  jpg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
 
-// Card images are stored relative to the document directory because iOS moves
-// the app container between updates, which would break absolute file URIs.
+type UploadedCardImages = {
+  frontImageUrl: string;
+  backImageUrl: string;
+  storagePaths: [string, string];
+};
+
+// Keep resolving relative paths for cards saved locally before Storage uploads
+// were introduced. New cards already contain remote download URLs.
 export const cardImageUri = (imagePath: string | null): string | null => {
   if (!imagePath) {
     return null;
@@ -78,23 +100,72 @@ export const cardImageUri = (imagePath: string | null): string | null => {
   return new File(Paths.document, imagePath).uri;
 };
 
-const persistScanImage = async (
-  sourceUri: string,
-  imageId: string,
-  side: "front" | "back",
-): Promise<string> => {
-  const directory = new Directory(Paths.document, CARD_IMAGES_DIRECTORY);
-
-  directory.create({ intermediates: true, idempotent: true });
-
+const imageExtension = (sourceUri: string): string => {
   const extension = sourceUri.split("?")[0].split(".").pop()?.toLowerCase();
-  const safeExtension =
-    extension && /^[a-z0-9]{1,5}$/.test(extension) ? extension : "jpg";
-  const fileName = `${imageId}-${side}.${safeExtension}`;
 
-  await new File(sourceUri).copy(new File(directory, fileName));
+  return extension && IMAGE_CONTENT_TYPES[extension] ? extension : "jpg";
+};
 
-  return `${CARD_IMAGES_DIRECTORY}/${fileName}`;
+const deleteStorageObjects = async (storagePaths: string[]) => {
+  const storage = getStorage();
+  const results = await Promise.allSettled(
+    storagePaths.map((storagePath) =>
+      deleteObject(ref(storage, storagePath)),
+    ),
+  );
+
+  results.forEach((result) => {
+    if (result.status === "rejected") {
+      console.warn(
+        "[Cards] Could not delete a card image from Storage",
+        result.reason,
+      );
+    }
+  });
+};
+
+const uploadScanImages = async (
+  ownerId: string,
+  uploadId: string,
+  images: CardImages,
+): Promise<UploadedCardImages> => {
+  const storage = getStorage();
+  const frontExtension = imageExtension(images.frontUri);
+  const backExtension = imageExtension(images.backUri);
+  const storagePaths: [string, string] = [
+    `${CARD_IMAGES_DIRECTORY}/${ownerId}/${uploadId}/front.${frontExtension}`,
+    `${CARD_IMAGES_DIRECTORY}/${ownerId}/${uploadId}/back.${backExtension}`,
+  ];
+  const frontRef = ref(storage, storagePaths[0]);
+  const backRef = ref(storage, storagePaths[1]);
+  const uploadResults = await Promise.allSettled([
+    putFile(frontRef, images.frontUri, {
+      contentType: IMAGE_CONTENT_TYPES[frontExtension],
+    }),
+    putFile(backRef, images.backUri, {
+      contentType: IMAGE_CONTENT_TYPES[backExtension],
+    }),
+  ]);
+
+  if (uploadResults.some((result) => result.status === "rejected")) {
+    await deleteStorageObjects(storagePaths);
+    throw new CardServiceError(
+      "Could not upload the card images. Check your connection and try again.",
+    );
+  }
+
+  try {
+    const [frontImageUrl, backImageUrl] = await Promise.all([
+      getDownloadURL(frontRef),
+      getDownloadURL(backRef),
+    ]);
+
+    return { frontImageUrl, backImageUrl, storagePaths };
+  } catch (error) {
+    await deleteStorageObjects(storagePaths);
+    console.warn("[Cards] Could not get card image download URLs", error);
+    throw new CardServiceError("Could not prepare the uploaded card images.");
+  }
 };
 
 const deleteLocalCardImage = (imagePath: string | null) => {
@@ -132,20 +203,11 @@ class CardService {
     scan: ScanCardResult,
     images: CardImages,
   ): Promise<UserCard> {
-    const imageId = `${Date.now().toString(36)}-${Math.random()
-      .toString(36)
-      .slice(2, 8)}`;
-    let frontImageUrl: string | null = null;
-    let backImageUrl: string | null = null;
-
-    try {
-      [frontImageUrl, backImageUrl] = await Promise.all([
-        persistScanImage(images.frontUri, imageId, "front"),
-        persistScanImage(images.backUri, imageId, "back"),
-      ]);
-    } catch (error) {
-      console.warn("[Cards] Could not persist scan images", error);
-    }
+    const uploadedImages = await uploadScanImages(
+      ownerId,
+      randomUUID(),
+      images,
+    );
 
     try {
       const response = await api.post<UserCard>("/cards", {
@@ -155,14 +217,13 @@ class CardService {
         rarity: scan.rarity,
         price: scan.price,
         confidence: scan.confidence,
-        frontImageUrl,
-        backImageUrl,
+        frontImageUrl: uploadedImages.frontImageUrl,
+        backImageUrl: uploadedImages.backImageUrl,
       });
 
       return response.data;
     } catch (error) {
-      deleteLocalCardImage(frontImageUrl);
-      deleteLocalCardImage(backImageUrl);
+      await deleteStorageObjects(uploadedImages.storagePaths);
       throw cardError(error, "Could not save the card.");
     }
   }
@@ -194,6 +255,18 @@ class CardService {
 
     deleteLocalCardImage(card.frontImageUrl);
     deleteLocalCardImage(card.backImageUrl);
+
+    const remoteImageUrls = [card.frontImageUrl, card.backImageUrl].filter(
+      (imageUrl): imageUrl is string =>
+        Boolean(
+          imageUrl &&
+            (imageUrl.startsWith("gs://") ||
+              imageUrl.includes("firebasestorage.googleapis.com") ||
+              imageUrl.includes("storage.googleapis.com")),
+        ),
+    );
+
+    await deleteStorageObjects(remoteImageUrls);
   }
 }
 

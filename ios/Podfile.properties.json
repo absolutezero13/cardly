@@ -5,7 +5,7 @@
   "expo.inlineModules.xcodeProjectTargets": "{\"mainTarget\":\"cardly\",\"targets\":[]}",
   "expo-image.disable-libdav1d": "false",
   "ios.useFrameworks": "static",
-  "ios.forceStaticLinking": "[\"RNFBApp\",\"RNFBAuth\"]",
+  "ios.forceStaticLinking": "[\"RNFBApp\",\"RNFBAuth\",\"RNFBStorage\"]",
   "apple.privacyManifestAggregationEnabled": "true",
   "EXPO_USE_PRECOMPILED_MODULES": "true"
 }
