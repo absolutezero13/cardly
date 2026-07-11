@@ -1,4 +1,4 @@
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -7,13 +7,17 @@ import { Colors, Layout, Typography } from "@/theme/Theme";
 type ScreenProps = PropsWithChildren<{
   title: string;
   subtitle?: string;
+  headerRight?: ReactNode;
 }>;
 
-const Screen = ({ title, subtitle, children }: ScreenProps) => {
+const Screen = ({ title, subtitle, headerRight, children }: ScreenProps) => {
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={styles.safeArea}>
       <View style={styles.content}>
-        <Text style={styles.title}>{title}</Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>{title}</Text>
+          {headerRight}
+        </View>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         {children}
       </View>
@@ -30,10 +34,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: Layout.screenVerticalPadding,
   },
+  header: {
+    minHeight: Layout.minimumTouchSize,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Layout.screenHorizontalPadding,
+  },
   title: {
     ...Typography.title,
     color: Colors.text,
-    paddingHorizontal: Layout.screenHorizontalPadding,
   },
   subtitle: {
     ...Typography.body,

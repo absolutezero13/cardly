@@ -2,6 +2,7 @@ import {
   getAuth,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   signInAnonymously as firebaseSignInAnonymously,
+  signOut as firebaseSignOut,
 } from "@react-native-firebase/auth";
 import useUserStore from "../stores/UserStore";
 import userService from "./user";
@@ -17,22 +18,19 @@ class AuthService {
     }
 
     const userCredential = await firebaseSignInAnonymously(firebaseAuth);
-    const uid = userCredential.user.uid;
 
-    this.setUser(uid);
-
-    return uid;
+    return userCredential.user.uid;
   }
 
-  initialize(onError: (error: unknown) => void): () => void {
-    return firebaseOnAuthStateChanged(getAuth(), (user) => {
-      if (user) {
-        this.setUser(user.uid);
-        return;
-      }
+  async signOut(): Promise<void> {
+    await firebaseSignOut(getAuth());
+    this.setUser(null);
+  }
 
-      this.setUser(null);
-      this.signInAnonymously().catch(onError);
+  initialize(onInitialized: () => void): () => void {
+    return firebaseOnAuthStateChanged(getAuth(), (user) => {
+      this.setUser(user?.uid ?? null);
+      onInitialized();
     });
   }
 

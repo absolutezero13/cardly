@@ -1,69 +1,29 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, StatusBar, StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import RootNavigation from "./navigation/RootNavigation";
 import auth from "./services/auth";
 import useUserStore from "./stores/UserStore";
-import {
-  Colors,
-  Layout,
-  NavigationTheme,
-  Radii,
-  Spacing,
-  Typography,
-} from "./theme/Theme";
+import { Colors, NavigationTheme } from "./theme/Theme";
 
 const App = () => {
   const user = useUserStore((state) => state.user);
-  const [authFailed, setAuthFailed] = useState(false);
-
-  const retryAuthentication = () => {
-    setAuthFailed(false);
-    auth.signInAnonymously().catch((error) => {
-      console.error("Anonymous authentication failed", error);
-      setAuthFailed(true);
-    });
-  };
+  const [isAuthInitialized, setIsAuthInitialized] = useState(false);
 
   useEffect(() => {
-    return auth.initialize((error) => {
-      console.error("Anonymous authentication failed", error);
-      setAuthFailed(true);
-    });
+    return auth.initialize(() => setIsAuthInitialized(true));
   }, []);
 
-  if (!user) {
+  if (!isAuthInitialized) {
     return (
       <SafeAreaProvider>
         <StatusBar
           barStyle="light-content"
           backgroundColor={Colors.background}
         />
-        <View style={styles.authContainer}>
-          {authFailed ? (
-            <>
-              <Text style={styles.authMessage}>Unable to start Cardly.</Text>
-              <Pressable
-                onPress={retryAuthentication}
-                style={({ pressed }) => [
-                  styles.retryButton,
-                  pressed && styles.retryButtonPressed,
-                ]}
-              >
-                <Text style={styles.retryButtonText}>Try again</Text>
-              </Pressable>
-            </>
-          ) : (
-            <ActivityIndicator color={Colors.primary} />
-          )}
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator color={Colors.primary} />
         </View>
       </SafeAreaProvider>
     );
@@ -76,38 +36,18 @@ const App = () => {
         backgroundColor={Colors.background}
       />
       <NavigationContainer theme={NavigationTheme}>
-        <RootNavigation />
+        <RootNavigation hasUser={Boolean(user)} />
       </NavigationContainer>
     </SafeAreaProvider>
   );
 };
 
 const styles = StyleSheet.create({
-  authContainer: {
+  loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: Spacing.lg,
-    paddingHorizontal: Layout.screenHorizontalPadding,
     backgroundColor: Colors.background,
-  },
-  authMessage: {
-    ...Typography.body,
-    color: Colors.text,
-  },
-  retryButton: {
-    minHeight: Layout.minimumTouchSize,
-    justifyContent: "center",
-    paddingHorizontal: Spacing.xl,
-    borderRadius: Radii.md,
-    backgroundColor: Colors.surfaceElevated,
-  },
-  retryButtonPressed: {
-    backgroundColor: Colors.primaryPressed,
-  },
-  retryButtonText: {
-    ...Typography.button,
-    color: Colors.text,
   },
 });
 
