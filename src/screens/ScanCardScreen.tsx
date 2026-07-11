@@ -1,4 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useRef, useState } from "react";
@@ -16,7 +17,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppButton from "@/components/AppButton";
 import IconButton from "@/components/IconButton";
 import ScanCardSide from "@/components/ScanCardSide";
-import scanService from "@/services/scan";
+import ScanLoadingScreen from "@/components/ScanLoadingScreen";
+import type { RootStackParamList } from "@/navigation/RootNavigation";
+import scanService, { ScanCardError } from "@/services/scan";
 import {
   Colors,
   Radii,
@@ -44,11 +47,12 @@ const CONTROL_SIZE = scale(52);
 const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
   mediaTypes: "images",
   allowsEditing: true,
-  quality: 0.8,
+  quality: 0.6,
 };
 
 const ScanCardScreen = () => {
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraView>(null);
@@ -92,7 +96,7 @@ const ScanCardScreen = () => {
     setIsCapturing(true);
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.6 });
 
       if (photo?.uri) {
         assignImage(photo.uri);
@@ -130,13 +134,18 @@ const ScanCardScreen = () => {
         backUri: images.back,
       });
 
+      navigation.replace("ScanResult", {
+        result,
+        frontUri: images.front,
+        backUri: images.back,
+      });
+    } catch (error) {
       Alert.alert(
-        "Card identified",
-        `${result.name} · ${result.setName}\nEstimated value $${result.price.toFixed(2)}`,
-        [{ text: "Done", onPress: () => navigation.goBack() }],
+        "Scan failed",
+        error instanceof ScanCardError
+          ? error.message
+          : "Something went wrong. Please try again.",
       );
-    } catch {
-      Alert.alert("Scan failed", "Something went wrong. Please try again.");
     } finally {
       setIsIdentifying(false);
     }
@@ -171,6 +180,10 @@ const ScanCardScreen = () => {
         </View>
       </View>
     );
+  }
+
+  if (isIdentifying && images.front && images.back) {
+    return <ScanLoadingScreen frontUri={images.front} backUri={images.back} />;
   }
 
   return (
