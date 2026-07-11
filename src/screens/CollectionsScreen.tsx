@@ -10,9 +10,10 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import AppButton from "@/components/AppButton";
+import AppHeader, { getAppHeaderContentInset } from "@/components/AppHeader";
 import CollectionActionsPopover, {
   type PopoverAnchor,
 } from "@/components/collections/CollectionActionsPopover";
@@ -26,11 +27,11 @@ import type {
   CollectionDetailParams,
   RootStackParamList,
 } from "@/navigation/RootNavigation";
+import { cardImageUri } from "@/services/cards";
 import collectionService, {
   CollectionServiceError,
   type UserCollection,
 } from "@/services/collections";
-import { cardImageUri } from "@/services/cards";
 import useCardsStore from "@/stores/CardsStore";
 import useUserStore from "@/stores/UserStore";
 import { Colors, Layout, Spacing, Typography, scale } from "@/theme/Theme";
@@ -46,6 +47,7 @@ const CREATE_ITEM: CollectionListItem = { kind: "create" };
 const FAVORITE_ITEM: CollectionListItem = { kind: "favorite" };
 
 const CollectionsScreen = () => {
+  const insets = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const ownerId = useUserStore((state) => state.user?.uid);
@@ -282,19 +284,7 @@ const CollectionsScreen = () => {
   };
 
   return (
-    <SafeAreaView edges={["top", "left", "right"]} style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Collections</Text>
-        <CollectionsToolbar
-          onChangeQuery={setQuery}
-          onToggleViewMode={() =>
-            setViewMode((current) => (current === "grid" ? "list" : "grid"))
-          }
-          query={query}
-          viewMode={viewMode}
-        />
-      </View>
-
+    <View style={styles.root}>
       {isLoading ? (
         <View style={styles.centerState}>
           <ActivityIndicator color={Colors.primary} />
@@ -313,13 +303,25 @@ const CollectionsScreen = () => {
         <FlatList
           key={viewMode}
           columnWrapperStyle={viewMode === "grid" ? styles.gridRow : undefined}
-          contentContainerStyle={styles.listContent}
-          contentInsetAdjustmentBehavior="automatic"
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingTop: getAppHeaderContentInset(insets.top) },
+          ]}
           data={items}
           keyExtractor={(item) =>
             item.kind === "collection" ? item.collection._id : item.kind
           }
           numColumns={viewMode === "grid" ? 2 : 1}
+          ListHeaderComponent={
+            <CollectionsToolbar
+              onChangeQuery={setQuery}
+              onToggleViewMode={() =>
+                setViewMode((current) => (current === "grid" ? "list" : "grid"))
+              }
+              query={query}
+              viewMode={viewMode}
+            />
+          }
           refreshControl={
             <RefreshControl
               onRefresh={() => reloadCollections(true)}
@@ -385,24 +387,15 @@ const CollectionsScreen = () => {
         onClose={() => setActiveActions(null)}
         onDelete={requestDelete}
       />
-    </SafeAreaView>
+      <AppHeader title="Collections" />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  header: {
-    paddingTop: Layout.screenVerticalPadding,
-    paddingHorizontal: Layout.screenHorizontalPadding,
-  },
-  title: {
-    ...Typography.title,
-    color: Colors.text,
-    fontSize: scale(27),
-    lineHeight: scale(33),
   },
   listContent: {
     flexGrow: 1,

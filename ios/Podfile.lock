@@ -181,6 +181,8 @@ PODS:
     - Yoga
   - ExpoAsset (57.0.3):
     - ExpoModulesCore
+  - ExpoBlur (57.0.0):
+    - ExpoModulesCore
   - ExpoCrypto (57.0.0):
     - ExpoModulesCore
   - ExpoDomWebView (57.0.0):
@@ -2377,6 +2379,7 @@ DEPENDENCIES:
   - expo-dev-menu (from `../node_modules/expo-dev-menu`)
   - expo-dev-menu-interface (from `../node_modules/expo-dev-menu-interface/ios`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
+  - ExpoBlur (from `../node_modules/expo-blur/ios`)
   - ExpoCrypto (from `../node_modules/expo-crypto/ios`)
   - "ExpoDomWebView (from `../node_modules/@expo/dom-webview/ios`)"
   - ExpoFileSystem (from `../node_modules/expo-file-system/ios/ExpoFileSystem.podspec`)
@@ -2514,6 +2517,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-dev-menu-interface/ios"
   ExpoAsset:
     :path: "../node_modules/expo-asset/ios"
+  ExpoBlur:
+    :path: "../node_modules/expo-blur/ios"
   ExpoCrypto:
     :path: "../node_modules/expo-crypto/ios"
   ExpoDomWebView:
@@ -2728,6 +2733,7 @@ SPEC CHECKSUMS:
   expo-dev-menu: c834085c744176cf72d4828cc6237ec7ed9a3406
   expo-dev-menu-interface: 7a59e803916fbfd1b96c75ff91ea8dddac7e722f
   ExpoAsset: 586e89aeaab2e23bfa90b9dce4d7d5e36815c039
+  ExpoBlur: 14d0cc31e6a1910b9712dfce1bd8a43d698cd5ae
   ExpoCrypto: f9db7ec10f772afa112c0e465f34bedbc38adf5f
   ExpoDomWebView: 73ba90107a5acc0017a09b06e66d8eb238e089b8
   ExpoFileSystem: ffcd56066188802f263254b6b2e60f74b6a0bdae

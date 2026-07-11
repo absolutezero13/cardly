@@ -71,9 +71,7 @@ const RootNavigation = ({ hasUser }: RootNavigationProps) => {
           <Stack.Screen
             name="CollectionDetail"
             component={CollectionDetailScreen}
-            options={{
-              headerShown: false,
-            }}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="AddCardsToCollection"

@@ -10,11 +10,12 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import RecentScansSection from "@/components/cards/RecentScansSection";
 import AppButton from "@/components/AppButton";
+import AppHeader, { getAppHeaderContentInset } from "@/components/AppHeader";
+import RecentScansSection from "@/components/cards/RecentScansSection";
 import IconButton from "@/components/IconButton";
-import Screen from "@/components/Screen";
 import useOpenScanCard from "@/hooks/useOpenScanCard";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
 import auth from "@/services/auth";
@@ -34,6 +35,7 @@ import {
 const HomeScreen = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
   const ownerId = useUserStore((state) => state.user?.uid);
   const cards = useCardsStore((state) => state.cards);
   const cardsStatus = useCardsStore((state) => state.status);
@@ -86,7 +88,7 @@ const HomeScreen = () => {
     [cards],
   );
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       await auth.signOut();
     } catch (error) {
@@ -96,9 +98,9 @@ const HomeScreen = () => {
         error instanceof Error ? error.message : "Please try again.",
       );
     }
-  };
+  }, []);
 
-  const confirmSignOut = () => {
+  const confirmSignOut = useCallback(() => {
     Alert.alert("Sign out?", "You’ll return to Welcome.", [
       { text: "Cancel", style: "cancel" },
       {
@@ -107,30 +109,20 @@ const HomeScreen = () => {
         onPress: () => void signOut(),
       },
     ]);
-  };
+  }, [signOut]);
 
   const isLoadingCards = cardsStatus === "idle" || cardsStatus === "loading";
 
   return (
-    <Screen
-      title="Home"
-      subtitle="Your collection, at a glance."
-      headerRight={
-        __DEV__ ? (
-          <IconButton
-            accessibilityLabel="Sign out"
-            icon="power"
-            onPress={confirmSignOut}
-            size={Layout.minimumTouchSize}
-            tintColor={Colors.danger}
-          />
-        ) : undefined
-      }
-    >
+    <View style={styles.root}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: getAppHeaderContentInset(insets.top) },
+        ]}
         showsVerticalScrollIndicator={false}
       >
+        <Text style={styles.subtitle}>Your collection, at a glance.</Text>
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <SymbolView
@@ -203,16 +195,38 @@ const HomeScreen = () => {
           </View>
         )}
       </ScrollView>
-    </Screen>
+      <AppHeader
+        rightAction={
+          __DEV__ ? (
+            <IconButton
+              accessibilityLabel="Sign out"
+              icon="power"
+              onPress={confirmSignOut}
+              size={Layout.minimumTouchSize}
+              tintColor={Colors.danger}
+            />
+          ) : undefined
+        }
+        title="Home"
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   scrollContent: {
     flexGrow: 1,
     gap: Layout.sectionGap,
     paddingBottom: scale(140),
-    paddingTop: Spacing.xl,
+  },
+  subtitle: {
+    ...Typography.body,
+    color: Colors.textMuted,
+    paddingHorizontal: Layout.screenHorizontalPadding,
   },
   statsRow: {
     flexDirection: "row",

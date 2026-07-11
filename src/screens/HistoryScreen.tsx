@@ -10,16 +10,14 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import AppButton from "@/components/AppButton";
+import AppHeader, { getAppHeaderContentInset } from "@/components/AppHeader";
 import HistoryCardItem from "@/components/cards/HistoryCardItem";
-import Screen from "@/components/Screen";
 import { TAB_BAR_HEIGHT } from "@/navigation/constants";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
-import cardService, {
-  CardServiceError,
-  type UserCard,
-} from "@/services/cards";
+import cardService, { CardServiceError, type UserCard } from "@/services/cards";
 import useCardsStore from "@/stores/CardsStore";
 import useUserStore from "@/stores/UserStore";
 import { Colors, Layout, Spacing, Typography, scale } from "@/theme/Theme";
@@ -27,6 +25,7 @@ import { Colors, Layout, Spacing, Typography, scale } from "@/theme/Theme";
 const HistoryScreen = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
   const ownerId = useUserStore((state) => state.user?.uid);
   const cards = useCardsStore((state) => state.cards);
   const status = useCardsStore((state) => state.status);
@@ -111,7 +110,7 @@ const HistoryScreen = () => {
   const isLoading = status === "idle" || status === "loading";
 
   return (
-    <Screen title="History">
+    <View style={styles.root}>
       {isLoading ? (
         <View style={styles.centerState}>
           <ActivityIndicator color={Colors.primary} />
@@ -131,8 +130,10 @@ const HistoryScreen = () => {
         </View>
       ) : (
         <FlatList
-          contentContainerStyle={styles.listContent}
-          contentInsetAdjustmentBehavior="automatic"
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingTop: getAppHeaderContentInset(insets.top) },
+          ]}
           data={cards}
           keyExtractor={(card) => card._id}
           ListEmptyComponent={
@@ -162,11 +163,16 @@ const HistoryScreen = () => {
           showsVerticalScrollIndicator={false}
         />
       )}
-    </Screen>
+      <AppHeader title="History" />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   listContent: {
     flexGrow: 1,
     gap: Spacing.md,

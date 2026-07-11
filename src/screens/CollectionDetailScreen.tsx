@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SymbolView } from "expo-symbols";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import AppButton from "@/components/AppButton";
+import AppHeader, { getAppHeaderContentInset } from "@/components/AppHeader";
 import HistoryCardItem from "@/components/cards/HistoryCardItem";
 import IconButton from "@/components/IconButton";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
@@ -126,9 +127,9 @@ const CollectionDetailScreen = ({ navigation, route }: Props) => {
     navigation.navigate("CardDetail", { kind: "savedCard", card });
   };
 
-  const openAddCards = () => {
+  const openAddCards = useCallback(() => {
     navigation.navigate("AddCardsToCollection", params);
-  };
+  }, [navigation, params]);
 
   const requestDelete = (card: UserCard) => {
     Alert.alert(
@@ -151,34 +152,6 @@ const CollectionDetailScreen = ({ navigation, route }: Props) => {
 
   return (
     <View style={styles.root}>
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <IconButton
-          accessibilityLabel="Go back"
-          icon={{
-            ios: "chevron.left",
-            android: "arrow_back",
-            web: "arrow_back",
-          }}
-          iconSize={scale(20)}
-          onPress={() => navigation.goBack()}
-          size={scale(40)}
-        />
-        <Text numberOfLines={1} style={styles.title}>
-          {title}
-        </Text>
-        {cards.length > 0 ? (
-          <IconButton
-            accessibilityLabel="Add cards"
-            icon={{ ios: "plus", android: "add", web: "add" }}
-            iconSize={scale(20)}
-            onPress={openAddCards}
-            size={scale(40)}
-          />
-        ) : (
-          <View style={styles.headerSpacer} />
-        )}
-      </View>
-
       {isLoading ? (
         <View style={styles.centerState}>
           <ActivityIndicator color={Colors.primary} />
@@ -200,9 +173,11 @@ const CollectionDetailScreen = ({ navigation, route }: Props) => {
         <FlatList
           contentContainerStyle={[
             styles.listContent,
-            { paddingBottom: Math.max(insets.bottom, Spacing.xl) },
+            {
+              paddingTop: getAppHeaderContentInset(insets.top),
+              paddingBottom: Math.max(insets.bottom, Spacing.xl),
+            },
           ]}
-          contentInsetAdjustmentBehavior="automatic"
           data={cards}
           keyExtractor={(card) => card._id}
           ListEmptyComponent={
@@ -260,6 +235,33 @@ const CollectionDetailScreen = ({ navigation, route }: Props) => {
           showsVerticalScrollIndicator={false}
         />
       )}
+      <AppHeader
+        leftAction={
+          <IconButton
+            accessibilityLabel="Go back"
+            icon={{
+              ios: "chevron.left",
+              android: "arrow_back",
+              web: "arrow_back",
+            }}
+            iconSize={scale(20)}
+            onPress={() => navigation.goBack()}
+            size={scale(40)}
+          />
+        }
+        rightAction={
+          cards.length > 0 ? (
+            <IconButton
+              accessibilityLabel="Add cards"
+              icon={{ ios: "plus", android: "add", web: "add" }}
+              iconSize={scale(18)}
+              onPress={openAddCards}
+              size={scale(40)}
+            />
+          ) : undefined
+        }
+        title={title}
+      />
     </View>
   );
 };
@@ -268,25 +270,6 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  header: {
-    minHeight: Layout.minimumTouchSize,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-    paddingHorizontal: Layout.screenHorizontalPadding,
-    paddingBottom: Spacing.md,
-  },
-  title: {
-    ...Typography.title,
-    flex: 1,
-    color: Colors.text,
-    fontSize: scale(24),
-    lineHeight: scale(30),
-  },
-  headerSpacer: {
-    width: scale(40),
-    height: scale(40),
   },
   listContent: {
     flexGrow: 1,

@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import AppButton from "@/components/AppButton";
+import AppHeader, { getAppHeaderContentInset } from "@/components/AppHeader";
 import IconButton from "@/components/IconButton";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
 import cardService, { CardServiceError, cardImageUri } from "@/services/cards";
@@ -132,19 +133,6 @@ const AddCardsToCollectionScreen = ({ navigation, route }: Props) => {
 
   return (
     <View style={styles.root}>
-      <View style={[styles.header, { paddingTop: Spacing.lg }]}>
-        <Text numberOfLines={1} style={styles.title}>
-          {titleForParams(params)}
-        </Text>
-        <IconButton
-          accessibilityLabel="Close"
-          icon={{ ios: "xmark", android: "close", web: "close" }}
-          iconSize={scale(18)}
-          onPress={() => navigation.goBack()}
-          size={scale(40)}
-        />
-      </View>
-
       {isLoading ? (
         <View style={styles.centerState}>
           <ActivityIndicator color={Colors.primary} />
@@ -162,10 +150,10 @@ const AddCardsToCollectionScreen = ({ navigation, route }: Props) => {
             contentContainerStyle={[
               styles.listContent,
               {
+                paddingTop: getAppHeaderContentInset(insets.top),
                 paddingBottom: Math.max(insets.bottom, Spacing.md) + scale(88),
               },
             ]}
-            contentInsetAdjustmentBehavior="automatic"
             data={cards}
             keyExtractor={(card) => card._id}
             ListEmptyComponent={
@@ -260,6 +248,19 @@ const AddCardsToCollectionScreen = ({ navigation, route }: Props) => {
           </View>
         </>
       )}
+      <AppHeader
+        isModalScreen
+        rightAction={
+          <IconButton
+            accessibilityLabel="Close"
+            icon={{ ios: "xmark", android: "close", web: "close" }}
+            iconSize={scale(18)}
+            onPress={() => navigation.goBack()}
+            size={scale(40)}
+          />
+        }
+        title={titleForParams(params)}
+      />
     </View>
   );
 };
@@ -268,22 +269,6 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  header: {
-    minHeight: Layout.minimumTouchSize,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: Spacing.md,
-    paddingHorizontal: Layout.screenHorizontalPadding,
-    paddingBottom: Spacing.md,
-  },
-  title: {
-    ...Typography.title,
-    flex: 1,
-    color: Colors.text,
-    fontSize: scale(22),
-    lineHeight: scale(28),
   },
   listContent: {
     flexGrow: 1,

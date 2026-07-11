@@ -15,13 +15,12 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import AppButton from "@/components/AppButton";
+import AppHeader, { getAppHeaderContentInset } from "@/components/AppHeader";
 import IconButton from "@/components/IconButton";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
 import cardService, { CardServiceError, cardImageUri } from "@/services/cards";
 import useCardsStore from "@/stores/CardsStore";
 import useUserStore from "@/stores/UserStore";
-import { rarityLabels } from "@/types/card";
-import { formatScanDate } from "@/utils/format";
 import {
   Colors,
   Layout,
@@ -31,6 +30,8 @@ import {
   scale,
   withOpacity,
 } from "@/theme/Theme";
+import { rarityLabels } from "@/types/card";
+import { formatScanDate } from "@/utils/format";
 
 type Props = NativeStackScreenProps<RootStackParamList, "CardDetail">;
 
@@ -213,11 +214,10 @@ const CardDetailScreen = ({ navigation, route }: Props) => {
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: Math.max(insets.top, Spacing.md),
+            paddingTop: getAppHeaderContentInset(insets.top, true),
             paddingBottom: Math.max(insets.bottom, Spacing.xl),
           },
         ]}
-        contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.cardStage}>
@@ -366,34 +366,40 @@ const CardDetailScreen = ({ navigation, route }: Props) => {
         ) : null}
       </ScrollView>
 
-      <View style={[styles.closeButton]}>
-        <IconButton
-          accessibilityLabel="Close card detail"
-          icon={{ ios: "xmark", android: "close", web: "close" }}
-          iconSize={scale(15)}
-          onPress={requestClose}
-          size={scale(44)}
-        />
-      </View>
-      {!isScanResult ? (
-        <View style={styles.favoriteButton}>
+      <AppHeader
+        isModalScreen
+        leftAction={
           <IconButton
-            accessibilityLabel={
-              isFavorite ? "Remove card from favorites" : "Add card to favorites"
-            }
-            disabled={isUpdatingFavorite}
-            icon={{
-              ios: isFavorite ? "star.fill" : "star",
-              android: isFavorite ? "star" : "star_border",
-              web: isFavorite ? "star" : "star_border",
-            }}
-            iconSize={scale(20)}
-            onPress={() => void toggleFavorite()}
+            accessibilityLabel="Close card detail"
+            icon={{ ios: "xmark", android: "close", web: "close" }}
+            iconSize={scale(15)}
+            onPress={requestClose}
             size={scale(44)}
-            tintColor={isFavorite ? Colors.primary : Colors.text}
           />
-        </View>
-      ) : null}
+        }
+        rightAction={
+          !isScanResult ? (
+            <IconButton
+              accessibilityLabel={
+                isFavorite
+                  ? "Remove card from favorites"
+                  : "Add card to favorites"
+              }
+              disabled={isUpdatingFavorite}
+              icon={{
+                ios: isFavorite ? "star.fill" : "star",
+                android: isFavorite ? "star" : "star_border",
+                web: isFavorite ? "star" : "star_border",
+              }}
+              iconSize={scale(20)}
+              onPress={() => void toggleFavorite()}
+              size={scale(44)}
+              tintColor={isFavorite ? Colors.primary : Colors.text}
+            />
+          ) : undefined
+        }
+        title={card.name}
+      />
     </View>
   );
 };
@@ -406,18 +412,6 @@ const styles = StyleSheet.create({
   content: {
     gap: Spacing.xl,
     paddingHorizontal: Layout.screenHorizontalPadding,
-  },
-  closeButton: {
-    position: "absolute",
-    right: Spacing.md,
-    zIndex: 10,
-    top: Spacing.md,
-  },
-  favoriteButton: {
-    position: "absolute",
-    left: Spacing.md,
-    zIndex: 10,
-    top: Spacing.md,
   },
   cardStage: {
     width: "100%",
