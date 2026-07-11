@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: Layout.screenHorizontalPadding,
     backgroundColor: withOpacity(Colors.black, 0.68),
-    marginBottom: scale(64),
+    paddingBottom: scale(72),
   },
   modalCard: {
     width: "100%",
