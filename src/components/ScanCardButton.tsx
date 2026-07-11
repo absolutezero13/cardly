@@ -1,12 +1,9 @@
-import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { GlassView, isGlassEffectAPIAvailable } from "expo-glass-effect";
 import { SymbolView } from "expo-symbols";
-import { Alert, Linking, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useCameraPermission } from "react-native-vision-camera";
 
-import type { RootStackParamList } from "@/navigation/RootNavigation";
+import useOpenScanCard from "@/hooks/useOpenScanCard";
 import { TAB_BAR_HEIGHT } from "@/navigation/constants";
 import { Colors, Radii, Spacing, scale } from "@/theme/Theme";
 
@@ -14,36 +11,8 @@ const BUTTON_SIZE = scale(72);
 
 const ScanCardButton = () => {
   const { bottom, right } = useSafeAreaInsets();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { hasPermission, requestPermission } = useCameraPermission();
+  const openScanCard = useOpenScanCard();
   const isGlassAvailable = isGlassEffectAPIAvailable();
-
-  const showSettingsAlert = () => {
-    Alert.alert(
-      "Camera access needed",
-      "Cardly needs the camera to capture your card. You can enable it in Settings.",
-      [
-        { text: "Not Now", style: "cancel" },
-        { text: "Open Settings", onPress: () => Linking.openSettings() },
-      ],
-    );
-  };
-
-  const handlePress = async () => {
-    if (hasPermission) {
-      navigation.navigate("ScanCard");
-      return;
-    }
-
-    const wasGranted = await requestPermission();
-
-    if (wasGranted) {
-      navigation.navigate("ScanCard");
-    } else {
-      showSettingsAlert();
-    }
-  };
 
   return (
     <View
@@ -59,7 +28,7 @@ const ScanCardButton = () => {
       <Pressable
         accessibilityLabel="Scan card"
         accessibilityRole="button"
-        onPress={handlePress}
+        onPress={openScanCard}
         style={({ pressed }) => [
           styles.pressable,
           pressed && styles.pressablePressed,
