@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import { useVideoPlayer, VideoView } from "expo-video";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -9,12 +11,30 @@ import {
   Layout,
   Spacing,
   Typography,
-  scale,
+  withOpacity,
 } from "@/theme/Theme";
+
+const WELCOME_VIDEO = require("../../assets/videos/welcome.mp4");
+const BUTTON_REVEAL_DELAY_MS = 3000;
 
 const WelcomeScreen = () => {
   const [isStarting, setIsStarting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showButton, setShowButton] = useState(false);
+
+  const player = useVideoPlayer(WELCOME_VIDEO, (nextPlayer) => {
+    nextPlayer.loop = true;
+    nextPlayer.muted = true;
+    nextPlayer.play();
+  });
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setShowButton(true);
+    }, BUTTON_REVEAL_DELAY_MS);
+
+    return () => clearTimeout(timeout);
+  }, []);
 
   const getStarted = async () => {
     setIsStarting(true);
@@ -33,49 +53,69 @@ const WelcomeScreen = () => {
   };
 
   return (
-    <SafeAreaView
-      edges={["top", "bottom", "left", "right"]}
-      style={styles.safeArea}
-    >
-      <View style={styles.content}>
-        <Text style={styles.title}>Cardly</Text>
-        <View style={styles.action}>
-          {errorMessage ? (
-            <Text selectable style={styles.errorMessage}>
-              {errorMessage}
-            </Text>
-          ) : null}
-          <AppButton
-            label="Get Started"
-            loading={isStarting}
-            onPress={() => void getStarted()}
-          />
-        </View>
-      </View>
-    </SafeAreaView>
+    <View style={styles.root}>
+      <VideoView
+        contentFit="cover"
+        nativeControls={false}
+        player={player}
+        style={styles.video}
+      />
+      <LinearGradient
+        colors={[
+          withOpacity(Colors.background, 0),
+          withOpacity(Colors.background, 0.5),
+          Colors.background,
+        ]}
+        locations={[0.35, 0.68, 1]}
+        pointerEvents="none"
+        style={styles.gradient}
+      />
+
+      <SafeAreaView
+        edges={["top", "bottom", "left", "right"]}
+        style={styles.overlay}
+      >
+        {showButton ? (
+          <View style={styles.action}>
+            {errorMessage ? (
+              <Text selectable style={styles.errorMessage}>
+                {errorMessage}
+              </Text>
+            ) : null}
+            <AppButton
+              label="Get Started"
+              loading={isStarting}
+              onPress={() => void getStarted()}
+            />
+          </View>
+        ) : null}
+      </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
     backgroundColor: Colors.background,
   },
-  content: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: scale(64),
-    paddingHorizontal: Layout.screenHorizontalPadding,
+  video: {
+    ...StyleSheet.absoluteFill,
   },
-  title: {
-    ...Typography.title,
-    color: Colors.text,
+  gradient: {
+    ...StyleSheet.absoluteFill,
+  },
+  overlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    paddingHorizontal: Layout.screenHorizontalPadding,
   },
   action: {
     width: "100%",
     maxWidth: Layout.contentMaxWidth,
+    alignSelf: "center",
     gap: Spacing.md,
+    paddingBottom: Spacing.lg,
   },
   errorMessage: {
     ...Typography.caption,

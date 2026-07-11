@@ -65,7 +65,8 @@
           "enableFrameProcessors": false,
           "enableMicrophonePermission": false
         }
-      ]
+      ],
+      "expo-video"
     ],
     "experiments": {
       "reactCompiler": true
