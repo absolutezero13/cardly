@@ -1,6 +1,5 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import {
@@ -171,20 +170,6 @@ const ScanResultScreen = ({ navigation, route }: Props) => {
                 source={{ uri: frontUri }}
                 style={styles.cardImage}
               />
-              {!isBackActive ? (
-                <LinearGradient
-                  colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.9)"]}
-                  pointerEvents="none"
-                  style={styles.titleGradient}
-                >
-                  <Text selectable style={styles.cardName}>
-                    {result.name}
-                  </Text>
-                  <Text selectable style={styles.setName}>
-                    {result.setName}
-                  </Text>
-                </LinearGradient>
-              ) : null}
             </Pressable>
           </Animated.View>
 
@@ -207,22 +192,17 @@ const ScanResultScreen = ({ navigation, route }: Props) => {
                 source={{ uri: backUri }}
                 style={styles.cardImage}
               />
-              {isBackActive ? (
-                <LinearGradient
-                  colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.9)"]}
-                  pointerEvents="none"
-                  style={styles.titleGradient}
-                >
-                  <Text selectable style={styles.cardName}>
-                    {result.name}
-                  </Text>
-                  <Text selectable style={styles.setName}>
-                    {result.setName}
-                  </Text>
-                </LinearGradient>
-              ) : null}
             </Pressable>
           </Animated.View>
+        </View>
+
+        <View style={styles.titleBlock}>
+          <Text selectable style={styles.cardName}>
+            {result.name}
+          </Text>
+          <Text selectable style={styles.setName}>
+            {result.setName}
+          </Text>
         </View>
 
         <View style={styles.detailsCard}>
@@ -310,7 +290,7 @@ const styles = StyleSheet.create({
   cardStage: {
     width: "100%",
     maxWidth: scale(360),
-    height: scale(440),
+    height: scale(400),
     alignSelf: "center",
     alignItems: "center",
   },
@@ -337,29 +317,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: withOpacity(Colors.white, 0.1),
   },
-  titleGradient: {
-    position: "absolute",
-    left: scale(5),
-    right: scale(5),
-    bottom: scale(5),
+  titleBlock: {
+    alignItems: "center",
     gap: Spacing.xs,
-    justifyContent: "flex-end",
-    minHeight: "42%",
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.lg,
-    paddingTop: Spacing.xxl,
-    borderBottomLeftRadius: Radii.lg - scale(5),
-    borderBottomRightRadius: Radii.lg - scale(5),
+    paddingHorizontal: Spacing.md,
   },
   cardName: {
     ...Typography.title,
     color: Colors.text,
     fontSize: scale(25),
     lineHeight: scale(30),
+    textAlign: "center",
   },
   setName: {
-    ...Typography.caption,
-    color: withOpacity(Colors.white, 0.78),
+    ...Typography.body,
+    color: Colors.textMuted,
+    textAlign: "center",
   },
   detailsCard: {
     gap: Spacing.lg,
