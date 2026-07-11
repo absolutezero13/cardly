@@ -25,19 +25,17 @@ import collectionService, {
   type UserCollection,
 } from "@/services/collections";
 import useUserStore from "@/stores/UserStore";
-import {
-  Colors,
-  Layout,
-  Spacing,
-  Typography,
-  scale,
-} from "@/theme/Theme";
+import { Colors, Layout, Spacing, Typography, scale } from "@/theme/Theme";
 
 type CollectionListItem =
   | { kind: "create" }
-  | { kind: "collection"; collection: UserCollection };
+  | { kind: "collection"; collection: UserCollection }
+  | {
+      kind: "favorite";
+    };
 
 const CREATE_ITEM: CollectionListItem = { kind: "create" };
+const FAVORITE_ITEM: CollectionListItem = { kind: "favorite" };
 
 const CollectionsScreen = () => {
   const ownerId = useUserStore((state) => state.user?.uid);
@@ -89,7 +87,7 @@ const CollectionsScreen = () => {
       }
     };
 
-    void loadInitialCollections();
+    loadInitialCollections();
 
     return () => controller.abort();
   }, [ownerId]);
@@ -108,13 +106,14 @@ const CollectionsScreen = () => {
 
   const items = useMemo<CollectionListItem[]>(
     () => [
+      FAVORITE_ITEM,
+      CREATE_ITEM,
       ...filteredCollections.map(
         (collection): CollectionListItem => ({
           kind: "collection",
           collection,
         }),
       ),
-      CREATE_ITEM,
     ],
     [filteredCollections],
   );
@@ -163,7 +162,10 @@ const CollectionsScreen = () => {
     setIsCreating(true);
 
     try {
-      const collection = await collectionService.createCollection(ownerId, name);
+      const collection = await collectionService.createCollection(
+        ownerId,
+        name,
+      );
       setCollections((current) => [...current, collection]);
       setIsCreateVisible(false);
       setCollectionName("");
@@ -258,7 +260,7 @@ const CollectionsScreen = () => {
           contentInsetAdjustmentBehavior="automatic"
           data={items}
           keyExtractor={(item) =>
-            item.kind === "create" ? "create" : item.collection._id
+            item.kind === "collection" ? item.collection._id : item.kind
           }
           numColumns={viewMode === "grid" ? 2 : 1}
           refreshControl={
@@ -274,9 +276,9 @@ const CollectionsScreen = () => {
                 item.kind === "collection" ? item.collection : undefined
               }
               isDeleting={
-                item.kind === "collection" &&
-                deletingId === item.collection._id
+                item.kind === "collection" && deletingId === item.collection._id
               }
+              kind={item.kind}
               onCreate={() => setIsCreateVisible(true)}
               onMore={openCollectionActions}
               viewMode={viewMode}

@@ -1,6 +1,12 @@
 import { SymbolView } from "expo-symbols";
 import { useRef } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import type { PopoverAnchor } from "@/components/collections/CollectionActionsPopover";
 import type { CollectionViewMode } from "@/components/collections/CollectionsToolbar";
@@ -15,7 +21,10 @@ import {
   withOpacity,
 } from "@/theme/Theme";
 
+export type CollectionItemKind = "create" | "collection" | "favorite";
+
 type CollectionItemProps = {
+  kind: CollectionItemKind;
   collection?: UserCollection;
   isDeleting?: boolean;
   viewMode: CollectionViewMode;
@@ -24,6 +33,7 @@ type CollectionItemProps = {
 };
 
 const CollectionItem = ({
+  kind,
   collection,
   isDeleting = false,
   viewMode,
@@ -39,7 +49,7 @@ const CollectionItem = ({
   };
 
   if (viewMode === "list") {
-    if (!collection) {
+    if (kind === "create") {
       return (
         <Pressable
           accessibilityLabel="Create collection"
@@ -57,6 +67,30 @@ const CollectionItem = ({
           <Text style={styles.listCreateLabel}>Create New</Text>
         </Pressable>
       );
+    }
+
+    if (kind === "favorite") {
+      return (
+        <View style={styles.listRow}>
+          <View style={[styles.listIcon, styles.favoriteIcon]}>
+            <SymbolView
+              name={{ ios: "star.fill", android: "star", web: "star" }}
+              size={scale(22)}
+              tintColor={Colors.primary}
+            />
+          </View>
+          <View style={styles.listCopy}>
+            <Text numberOfLines={1} style={styles.listCollectionName}>
+              Favorites
+            </Text>
+            <Text style={styles.cardCount}>0 cards</Text>
+          </View>
+        </View>
+      );
+    }
+
+    if (!collection) {
+      return null;
     }
 
     return (
@@ -100,7 +134,7 @@ const CollectionItem = ({
     );
   }
 
-  if (!collection) {
+  if (kind === "create") {
     return (
       <Pressable
         accessibilityLabel="Create collection"
@@ -120,6 +154,30 @@ const CollectionItem = ({
     );
   }
 
+  if (kind === "favorite") {
+    return (
+      <View style={styles.gridCard}>
+        <View style={styles.gridArtwork}>
+          <SymbolView
+            name={{ ios: "star.fill", android: "star", web: "star" }}
+            size={scale(54)}
+            tintColor={withOpacity(Colors.primary, 0.72)}
+          />
+        </View>
+        <View style={styles.gridCopy}>
+          <Text numberOfLines={2} style={styles.collectionName}>
+            Favorites
+          </Text>
+          <Text style={styles.cardCount}>0 cards</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!collection) {
+    return null;
+  }
+
   return (
     <View style={styles.gridCard}>
       <View style={styles.gridArtwork}>
@@ -135,11 +193,7 @@ const CollectionItem = ({
         </Text>
         <Text style={styles.cardCount}>0 cards</Text>
       </View>
-      <View
-        ref={moreButtonRef}
-        collapsable={false}
-        style={styles.moreButton}
-      >
+      <View ref={moreButtonRef} collapsable={false} style={styles.moreButton}>
         {isDeleting ? (
           <ActivityIndicator color={Colors.textMuted} size="small" />
         ) : (
@@ -241,6 +295,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: withOpacity(Colors.white, 0.08),
+  },
+  favoriteIcon: {
+    backgroundColor: withOpacity(Colors.primary, 0.14),
   },
   listCopy: {
     flex: 1,
