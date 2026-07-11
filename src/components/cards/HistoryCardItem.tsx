@@ -10,6 +10,7 @@ import {
 
 import { cardImageUri, type UserCard } from "@/services/cards";
 import { rarityLabels } from "@/types/card";
+import { formatPrice, formatScanDate } from "@/utils/format";
 import {
   Colors,
   Radii,
@@ -23,40 +24,25 @@ type HistoryCardItemProps = {
   card: UserCard;
   isDeleting: boolean;
   onDelete: (card: UserCard) => void;
-};
-
-const formatPrice = (price: number) => {
-  if (price >= 1000) {
-    return `$${price.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
-  }
-
-  return `$${price.toFixed(price >= 100 ? 0 : 2)}`;
-};
-
-const formatScanDate = (createdAt: string) => {
-  const date = new Date(createdAt);
-
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  onPress: (card: UserCard) => void;
 };
 
 const HistoryCardItem = ({
   card,
   isDeleting,
   onDelete,
+  onPress,
 }: HistoryCardItemProps) => {
   const imageUri = cardImageUri(card.frontImageUrl);
   const scanDate = formatScanDate(card.createdAt);
 
   return (
-    <View style={styles.row}>
+    <Pressable
+      accessibilityLabel={card.name}
+      accessibilityRole="button"
+      onPress={() => onPress(card)}
+      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+    >
       <View style={styles.thumbnailFrame}>
         {imageUri ? (
           <Image
@@ -111,7 +97,7 @@ const HistoryCardItem = ({
           </Pressable>
         )}
       </View>
-    </View>
+    </Pressable>
   );
 };
 
@@ -126,6 +112,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
+  },
+  rowPressed: {
+    backgroundColor: Colors.surfaceElevated,
   },
   thumbnailFrame: {
     width: scale(56),

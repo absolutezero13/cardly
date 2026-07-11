@@ -2,6 +2,7 @@ import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { rarityLabels, type TradingCard as TradingCardType } from "@/types/card";
+import { formatPrice } from "@/utils/format";
 import {
   Colors,
   Layout,
@@ -18,14 +19,6 @@ const CARD_HEIGHT = scale(196);
 type TradingCardProps = {
   card: TradingCardType;
   onPress?: () => void;
-};
-
-const formatPrice = (price: number) => {
-  if (price >= 1000) {
-    return `$${price.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
-  }
-
-  return `$${price.toFixed(price >= 100 ? 0 : 2)}`;
 };
 
 const TradingCard = ({ card, onPress }: TradingCardProps) => {

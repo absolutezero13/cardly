@@ -17,9 +17,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppButton from "@/components/AppButton";
 import IconButton from "@/components/IconButton";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
-import cardService, { CardServiceError } from "@/services/cards";
+import cardService, { CardServiceError, cardImageUri } from "@/services/cards";
 import useUserStore from "@/stores/UserStore";
 import { rarityLabels } from "@/types/card";
+import { formatScanDate } from "@/utils/format";
 import {
   Colors,
   Layout,
@@ -30,27 +31,41 @@ import {
   withOpacity,
 } from "@/theme/Theme";
 
-type Props = NativeStackScreenProps<RootStackParamList, "ScanResult">;
+type Props = NativeStackScreenProps<RootStackParamList, "CardDetail">;
 
-const ScanResultScreen = ({ navigation, route }: Props) => {
+const CardDetailScreen = ({ navigation, route }: Props) => {
   const insets = useSafeAreaInsets();
-  const { result, frontUri, backUri } = route.params;
+  const params = route.params;
+  const isScanResult = params.kind === "scanResult";
+  const card = isScanResult ? params.result : params.card;
+  const frontUri = isScanResult
+    ? params.frontUri
+    : cardImageUri(params.card.frontImageUrl);
+  const backUri = isScanResult
+    ? params.backUri
+    : cardImageUri(params.card.backImageUrl);
+  const scanDate = isScanResult ? null : formatScanDate(params.card.createdAt);
   const ownerId = useUserStore((state) => state.user?.uid);
   const [cardSwapProgress] = useState(() => new Animated.Value(0));
   const [isBackActive, setIsBackActive] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const confidence = Math.round(
-    Math.min(1, Math.max(0, result.confidence)) * 100,
+    Math.min(1, Math.max(0, card.confidence)) * 100,
   );
-  const price = result.price.toLocaleString("en-US", {
+  const price = card.price.toLocaleString("en-US", {
     style: "currency",
     currency: "USD",
-    minimumFractionDigits: result.price >= 100 ? 0 : 2,
+    minimumFractionDigits: card.price >= 100 ? 0 : 2,
     maximumFractionDigits: 2,
   });
 
   const close = () => navigation.popTo("HomeTabs");
   const requestClose = () => {
+    if (!isScanResult) {
+      navigation.goBack();
+      return;
+    }
+
     Alert.alert(
       "Discard analysis?",
       "This analysis has not been saved and will be lost.",
@@ -61,16 +76,16 @@ const ScanResultScreen = ({ navigation, route }: Props) => {
     );
   };
   const handleSave = async () => {
-    if (!ownerId || isSaving) {
+    if (params.kind !== "scanResult" || !ownerId || isSaving) {
       return;
     }
 
     setIsSaving(true);
 
     try {
-      await cardService.saveScannedCard(ownerId, result, {
-        frontUri,
-        backUri,
+      await cardService.saveScannedCard(ownerId, params.result, {
+        frontUri: params.frontUri,
+        backUri: params.backUri,
       });
       close();
     } catch (error) {
@@ -179,11 +194,21 @@ const ScanResultScreen = ({ navigation, route }: Props) => {
               onPress={swapCards}
               style={styles.cardPressable}
             >
-              <Image
-                contentFit="cover"
-                source={{ uri: frontUri }}
-                style={styles.cardImage}
-              />
+              {frontUri ? (
+                <Image
+                  contentFit="cover"
+                  source={{ uri: frontUri }}
+                  style={styles.cardImage}
+                />
+              ) : (
+                <View style={[styles.cardImage, styles.cardImageFallback]}>
+                  <SymbolView
+                    name={{ ios: "photo", android: "image", web: "image" }}
+                    size={scale(32)}
+                    tintColor={Colors.textMuted}
+                  />
+                </View>
+              )}
             </Pressable>
           </Animated.View>
 
@@ -201,21 +226,31 @@ const ScanResultScreen = ({ navigation, route }: Props) => {
               onPress={swapCards}
               style={styles.cardPressable}
             >
-              <Image
-                contentFit="cover"
-                source={{ uri: backUri }}
-                style={styles.cardImage}
-              />
+              {backUri ? (
+                <Image
+                  contentFit="cover"
+                  source={{ uri: backUri }}
+                  style={styles.cardImage}
+                />
+              ) : (
+                <View style={[styles.cardImage, styles.cardImageFallback]}>
+                  <SymbolView
+                    name={{ ios: "photo", android: "image", web: "image" }}
+                    size={scale(32)}
+                    tintColor={Colors.textMuted}
+                  />
+                </View>
+              )}
             </Pressable>
           </Animated.View>
         </View>
 
         <View style={styles.titleBlock}>
           <Text selectable style={styles.cardName}>
-            {result.name}
+            {card.name}
           </Text>
           <Text selectable style={styles.setName}>
-            {result.setName}
+            {card.setName}
           </Text>
         </View>
 
@@ -243,7 +278,7 @@ const ScanResultScreen = ({ navigation, route }: Props) => {
           <View style={styles.detailRow}>
             <Text style={styles.detailName}>Rarity</Text>
             <Text selectable style={styles.detailValue}>
-              {rarityLabels[result.rarity]}
+              {rarityLabels[card.rarity]}
             </Text>
           </View>
           <View style={styles.detailRow}>
@@ -252,6 +287,14 @@ const ScanResultScreen = ({ navigation, route }: Props) => {
               {confidence}%
             </Text>
           </View>
+          {scanDate ? (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailName}>Scanned</Text>
+              <Text selectable style={styles.detailValue}>
+                {scanDate}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.note}>
@@ -266,17 +309,23 @@ const ScanResultScreen = ({ navigation, route }: Props) => {
           </Text>
         </View>
 
-        <AppButton
-          icon={{ ios: "bookmark.fill", android: "bookmark", web: "bookmark" }}
-          label="Save"
-          loading={isSaving}
-          onPress={() => void handleSave()}
-        />
+        {isScanResult ? (
+          <AppButton
+            icon={{
+              ios: "bookmark.fill",
+              android: "bookmark",
+              web: "bookmark",
+            }}
+            label="Save"
+            loading={isSaving}
+            onPress={() => void handleSave()}
+          />
+        ) : null}
       </ScrollView>
 
       <View style={[styles.closeButton]}>
         <IconButton
-          accessibilityLabel="Close scan result"
+          accessibilityLabel="Close card detail"
           icon={{ ios: "xmark", android: "close", web: "close" }}
           iconSize={scale(15)}
           onPress={requestClose}
@@ -331,6 +380,11 @@ const styles = StyleSheet.create({
     borderRadius: Radii.lg - scale(5),
     borderWidth: 1,
     borderColor: withOpacity(Colors.white, 0.1),
+  },
+  cardImageFallback: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.surface,
   },
   titleBlock: {
     alignItems: "center",
@@ -416,4 +470,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ScanResultScreen;
+export default CardDetailScreen;

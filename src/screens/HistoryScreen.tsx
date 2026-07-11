@@ -1,4 +1,5 @@
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,6 +15,7 @@ import AppButton from "@/components/AppButton";
 import HistoryCardItem from "@/components/cards/HistoryCardItem";
 import Screen from "@/components/Screen";
 import { TAB_BAR_HEIGHT } from "@/navigation/constants";
+import type { RootStackParamList } from "@/navigation/RootNavigation";
 import cardService, {
   CardServiceError,
   type UserCard,
@@ -22,6 +24,8 @@ import useUserStore from "@/stores/UserStore";
 import { Colors, Layout, Spacing, Typography, scale } from "@/theme/Theme";
 
 const HistoryScreen = () => {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const ownerId = useUserStore((state) => state.user?.uid);
   const [cards, setCards] = useState<UserCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -117,6 +121,10 @@ const HistoryScreen = () => {
     }
   };
 
+  const openCardDetail = (card: UserCard) => {
+    navigation.navigate("CardDetail", { kind: "savedCard", card });
+  };
+
   const requestDelete = (card: UserCard) => {
     Alert.alert(card.name, "Remove this card from your history?", [
       { text: "Cancel", style: "cancel" },
@@ -170,6 +178,7 @@ const HistoryScreen = () => {
               card={item}
               isDeleting={deletingId === item._id}
               onDelete={requestDelete}
+              onPress={openCardDetail}
             />
           )}
           showsVerticalScrollIndicator={false}

@@ -1,21 +1,30 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import TabBarNavigation from "@/navigation/TabBarNavigation";
+import CardDetailScreen from "@/screens/CardDetailScreen";
 import ScanCardScreen from "@/screens/ScanCardScreen";
-import ScanResultScreen from "@/screens/ScanResultScreen";
 import WelcomeScreen from "@/screens/WelcomeScreen";
+import type { UserCard } from "@/services/cards";
 import type { ScanCardResult } from "@/services/scan";
 import { Colors } from "@/theme/Theme";
+
+export type CardDetailParams =
+  | {
+      kind: "scanResult";
+      result: ScanCardResult;
+      frontUri: string;
+      backUri: string;
+    }
+  | {
+      kind: "savedCard";
+      card: UserCard;
+    };
 
 export type RootStackParamList = {
   Welcome: undefined;
   HomeTabs: undefined;
   ScanCard: undefined;
-  ScanResult: {
-    result: ScanCardResult;
-    frontUri: string;
-    backUri: string;
-  };
+  CardDetail: CardDetailParams;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -47,8 +56,8 @@ const RootNavigation = ({ hasUser }: RootNavigationProps) => {
             }}
           />
           <Stack.Screen
-            name="ScanResult"
-            component={ScanResultScreen}
+            name="CardDetail"
+            component={CardDetailScreen}
             options={{
               headerShown: false,
               presentation: "modal",

@@ -134,7 +134,8 @@ const ScanCardScreen = () => {
         backUri: images.back,
       });
 
-      navigation.replace("ScanResult", {
+      navigation.replace("CardDetail", {
+        kind: "scanResult",
         result,
         frontUri: images.front,
         backUri: images.back,
