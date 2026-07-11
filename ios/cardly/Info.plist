@@ -61,8 +61,12 @@
 	<array>
 		<string>_expo._tcp</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Cardly uses your camera to capture the front and back of your trading cards.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Expo Dev Launcher uses the local network to discover and connect to development servers running on your computer.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Cardly needs access to your photos so you can pick card images from your library.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

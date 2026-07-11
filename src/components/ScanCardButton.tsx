@@ -1,8 +1,12 @@
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useCameraPermissions } from "expo-camera";
 import { GlassView, isGlassEffectAPIAvailable } from "expo-glass-effect";
 import { SymbolView } from "expo-symbols";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Alert, Linking, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import type { RootStackParamList } from "@/navigation/RootNavigation";
 import { TAB_BAR_HEIGHT } from "@/navigation/constants";
 import { Colors, Radii, Spacing, scale } from "@/theme/Theme";
 
@@ -10,7 +14,41 @@ const BUTTON_SIZE = scale(72);
 
 const ScanCardButton = () => {
   const { bottom, right } = useSafeAreaInsets();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [permission, requestPermission] = useCameraPermissions();
   const isGlassAvailable = isGlassEffectAPIAvailable();
+
+  const showSettingsAlert = () => {
+    Alert.alert(
+      "Camera access needed",
+      "Cardly needs the camera to capture your card. You can enable it in Settings.",
+      [
+        { text: "Not Now", style: "cancel" },
+        { text: "Open Settings", onPress: () => Linking.openSettings() },
+      ],
+    );
+  };
+
+  const handlePress = async () => {
+    if (permission?.granted) {
+      navigation.navigate("ScanCard");
+      return;
+    }
+
+    if (permission && !permission.canAskAgain) {
+      showSettingsAlert();
+      return;
+    }
+
+    const result = await requestPermission();
+
+    if (result.granted) {
+      navigation.navigate("ScanCard");
+    } else if (!result.canAskAgain) {
+      showSettingsAlert();
+    }
+  };
 
   return (
     <View
@@ -26,7 +64,7 @@ const ScanCardButton = () => {
       <Pressable
         accessibilityLabel="Scan card"
         accessibilityRole="button"
-        onPress={() => {}}
+        onPress={handlePress}
         style={({ pressed }) => [
           styles.pressable,
           pressed && styles.pressablePressed,
