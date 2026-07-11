@@ -1,3 +1,5 @@
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -20,10 +22,16 @@ import CollectionsToolbar, {
 } from "@/components/collections/CollectionsToolbar";
 import CreateCollectionModal from "@/components/collections/CreateCollectionModal";
 import { TAB_BAR_HEIGHT } from "@/navigation/constants";
+import type {
+  CollectionDetailParams,
+  RootStackParamList,
+} from "@/navigation/RootNavigation";
 import collectionService, {
   CollectionServiceError,
   type UserCollection,
 } from "@/services/collections";
+import { cardImageUri } from "@/services/cards";
+import useCardsStore from "@/stores/CardsStore";
 import useUserStore from "@/stores/UserStore";
 import { Colors, Layout, Spacing, Typography, scale } from "@/theme/Theme";
 
@@ -38,7 +46,13 @@ const CREATE_ITEM: CollectionListItem = { kind: "create" };
 const FAVORITE_ITEM: CollectionListItem = { kind: "favorite" };
 
 const CollectionsScreen = () => {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const ownerId = useUserStore((state) => state.user?.uid);
+  const cards = useCardsStore((state) => state.cards);
+  const cardsStatus = useCardsStore((state) => state.status);
+  const ensureCardsLoaded = useCardsStore((state) => state.ensureLoaded);
+  const refreshCards = useCardsStore((state) => state.refresh);
   const [collections, setCollections] = useState<UserCollection[]>([]);
   const [query, setQuery] = useState("");
   const [viewMode, setViewMode] = useState<CollectionViewMode>("grid");
@@ -63,10 +77,10 @@ const CollectionsScreen = () => {
 
     const loadInitialCollections = async () => {
       try {
-        const nextCollections = await collectionService.listCollections(
-          ownerId,
-          controller.signal,
-        );
+        const [nextCollections] = await Promise.all([
+          collectionService.listCollections(ownerId, controller.signal),
+          ensureCardsLoaded(ownerId),
+        ]);
 
         if (!controller.signal.aborted) {
           setCollections(nextCollections);
@@ -90,7 +104,39 @@ const CollectionsScreen = () => {
     loadInitialCollections();
 
     return () => controller.abort();
-  }, [ownerId]);
+  }, [ensureCardsLoaded, ownerId]);
+
+  const cardCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    cards.forEach((card) => {
+      if (card.collectionId) {
+        counts.set(card.collectionId, (counts.get(card.collectionId) ?? 0) + 1);
+      }
+    });
+
+    return counts;
+  }, [cards]);
+
+  const cardPreviews = useMemo(() => {
+    const previews = new Map<string, string[]>();
+
+    cards.forEach((card) => {
+      if (!card.collectionId) {
+        return;
+      }
+
+      const imageUri = cardImageUri(card.frontImageUrl);
+      const collectionPreviews = previews.get(card.collectionId) ?? [];
+
+      if (imageUri && collectionPreviews.length < 3) {
+        collectionPreviews.push(imageUri);
+        previews.set(card.collectionId, collectionPreviews);
+      }
+    });
+
+    return previews;
+  }, [cards]);
 
   const filteredCollections = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -131,7 +177,10 @@ const CollectionsScreen = () => {
     setLoadError(null);
 
     try {
-      const nextCollections = await collectionService.listCollections(ownerId);
+      const [nextCollections] = await Promise.all([
+        collectionService.listCollections(ownerId),
+        refreshCards(ownerId),
+      ]);
       setCollections(nextCollections);
     } catch (error) {
       setLoadError(
@@ -212,6 +261,10 @@ const CollectionsScreen = () => {
     setActiveActions({ collection, anchor });
   };
 
+  const openCollectionDetail = (params: CollectionDetailParams) => {
+    navigation.navigate("CollectionDetail", params);
+  };
+
   const requestDelete = (collection: UserCollection) => {
     setActiveActions(null);
     Alert.alert(collection.name, "Delete this collection?", [
@@ -275,12 +328,38 @@ const CollectionsScreen = () => {
               collection={
                 item.kind === "collection" ? item.collection : undefined
               }
+              cardCount={
+                cardsStatus !== "ready"
+                  ? undefined
+                  : item.kind === "favorite"
+                    ? (cardCounts.get("favorite") ?? 0)
+                    : item.kind === "collection"
+                      ? (cardCounts.get(item.collection._id) ?? 0)
+                      : undefined
+              }
+              cardPreviewUris={
+                item.kind === "collection"
+                  ? cardPreviews.get(item.collection._id)
+                  : undefined
+              }
               isDeleting={
                 item.kind === "collection" && deletingId === item.collection._id
               }
               kind={item.kind}
               onCreate={() => setIsCreateVisible(true)}
               onMore={openCollectionActions}
+              onPress={
+                item.kind === "favorite"
+                  ? () => openCollectionDetail({ kind: "favorite" })
+                  : item.kind === "collection"
+                    ? () =>
+                        openCollectionDetail({
+                          kind: "collection",
+                          collectionId: item.collection._id,
+                          name: item.collection.name,
+                        })
+                    : undefined
+              }
               viewMode={viewMode}
             />
           )}

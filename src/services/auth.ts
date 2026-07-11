@@ -4,6 +4,7 @@ import {
   signInAnonymously as firebaseSignInAnonymously,
   signOut as firebaseSignOut,
 } from "@react-native-firebase/auth";
+import useCardsStore from "../stores/CardsStore";
 import useUserStore from "../stores/UserStore";
 import userService from "./user";
 
@@ -35,6 +36,12 @@ class AuthService {
   }
 
   private setUser(uid: string | null): void {
+    const previousUid = useUserStore.getState().user?.uid ?? null;
+
+    if (previousUid !== uid) {
+      useCardsStore.getState().reset();
+    }
+
     useUserStore.getState().setUser(uid ? { uid } : null);
 
     if (uid) {

@@ -1,6 +1,6 @@
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useCallback, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -20,6 +20,7 @@ import cardService, {
   CardServiceError,
   type UserCard,
 } from "@/services/cards";
+import useCardsStore from "@/stores/CardsStore";
 import useUserStore from "@/stores/UserStore";
 import { Colors, Layout, Spacing, Typography, scale } from "@/theme/Theme";
 
@@ -27,78 +28,49 @@ const HistoryScreen = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const ownerId = useUserStore((state) => state.user?.uid);
-  const [cards, setCards] = useState<UserCard[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const cards = useCardsStore((state) => state.cards);
+  const status = useCardsStore((state) => state.status);
+  const loadError = useCardsStore((state) => state.error);
+  const ensureLoaded = useCardsStore((state) => state.ensureLoaded);
+  const refresh = useCardsStore((state) => state.refresh);
+  const removeCard = useCardsStore((state) => state.removeCard);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Refetch on focus so cards saved from the scan flow show up immediately.
-  useFocusEffect(
-    useCallback(() => {
-      if (!ownerId) {
-        return;
-      }
-
-      const controller = new AbortController();
-
-      const loadCards = async () => {
-        try {
-          const nextCards = await cardService.listCards(
-            ownerId,
-            controller.signal,
-          );
-
-          if (!controller.signal.aborted) {
-            setCards(nextCards);
-            setLoadError(null);
-          }
-        } catch (error) {
-          if (!controller.signal.aborted) {
-            setLoadError(
-              error instanceof CardServiceError
-                ? error.message
-                : "Could not load your cards.",
-            );
-          }
-        } finally {
-          if (!controller.signal.aborted) {
-            setIsLoading(false);
-          }
-        }
-      };
-
-      void loadCards();
-
-      return () => controller.abort();
-    }, [ownerId]),
-  );
-
-  const reloadCards = async (refresh = false) => {
+  useEffect(() => {
     if (!ownerId) {
       return;
     }
 
-    if (refresh) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
-    setLoadError(null);
+    void ensureLoaded(ownerId);
+  }, [ensureLoaded, ownerId]);
 
-    try {
-      const nextCards = await cardService.listCards(ownerId);
-      setCards(nextCards);
-    } catch (error) {
-      setLoadError(
-        error instanceof CardServiceError
-          ? error.message
-          : "Could not load your cards.",
-      );
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+  const reloadCards = async (pullToRefresh = false) => {
+    if (!ownerId) {
+      return;
     }
+
+    if (pullToRefresh) {
+      setIsRefreshing(true);
+
+      try {
+        await refresh(ownerId);
+      } catch (error) {
+        Alert.alert(
+          "Could not refresh",
+          error instanceof CardServiceError
+            ? error.message
+            : "Please try again.",
+        );
+      } finally {
+        setIsRefreshing(false);
+      }
+
+      return;
+    }
+
+    // ensureLoaded refetches when status is idle/error (not when ready).
+    await ensureLoaded(ownerId);
   };
 
   const deleteCard = async (card: UserCard) => {
@@ -110,7 +82,7 @@ const HistoryScreen = () => {
 
     try {
       await cardService.deleteCard(ownerId, card);
-      setCards((current) => current.filter((item) => item._id !== card._id));
+      removeCard(card._id);
     } catch (error) {
       Alert.alert(
         "Could not delete card",
@@ -136,6 +108,8 @@ const HistoryScreen = () => {
     ]);
   };
 
+  const isLoading = status === "idle" || status === "loading";
+
   return (
     <Screen title="History">
       {isLoading ? (
@@ -143,13 +117,16 @@ const HistoryScreen = () => {
           <ActivityIndicator color={Colors.primary} />
           <Text style={styles.stateText}>Loading your cards…</Text>
         </View>
-      ) : loadError ? (
+      ) : status === "error" && cards.length === 0 ? (
         <View style={styles.centerState}>
           <Text selectable style={styles.errorText}>
-            {loadError}
+            {loadError ?? "Could not load your cards."}
           </Text>
           <View style={styles.retryButtonContainer}>
-            <AppButton label="Try Again" onPress={() => void reloadCards()} />
+            <AppButton
+              label="Try Again"
+              onPress={() => void reloadCards(false)}
+            />
           </View>
         </View>
       ) : (
@@ -175,9 +152,10 @@ const HistoryScreen = () => {
           }
           renderItem={({ item }) => (
             <HistoryCardItem
+              actionIcon={{ ios: "trash", android: "delete", web: "delete" }}
               card={item}
-              isDeleting={deletingId === item._id}
-              onDelete={requestDelete}
+              isActionPending={deletingId === item._id}
+              onAction={requestDelete}
               onPress={openCardDetail}
             />
           )}

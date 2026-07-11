@@ -18,6 +18,7 @@ import AppButton from "@/components/AppButton";
 import IconButton from "@/components/IconButton";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
 import cardService, { CardServiceError, cardImageUri } from "@/services/cards";
+import useCardsStore from "@/stores/CardsStore";
 import useUserStore from "@/stores/UserStore";
 import { rarityLabels } from "@/types/card";
 import { formatScanDate } from "@/utils/format";
@@ -46,6 +47,7 @@ const CardDetailScreen = ({ navigation, route }: Props) => {
     : cardImageUri(params.card.backImageUrl);
   const scanDate = isScanResult ? null : formatScanDate(params.card.createdAt);
   const ownerId = useUserStore((state) => state.user?.uid);
+  const addCard = useCardsStore((state) => state.addCard);
   const [cardSwapProgress] = useState(() => new Animated.Value(0));
   const [isBackActive, setIsBackActive] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -83,10 +85,15 @@ const CardDetailScreen = ({ navigation, route }: Props) => {
     setIsSaving(true);
 
     try {
-      await cardService.saveScannedCard(ownerId, params.result, {
-        frontUri: params.frontUri,
-        backUri: params.backUri,
-      });
+      const savedCard = await cardService.saveScannedCard(
+        ownerId,
+        params.result,
+        {
+          frontUri: params.frontUri,
+          backUri: params.backUri,
+        },
+      );
+      addCard(savedCard);
       close();
     } catch (error) {
       Alert.alert(

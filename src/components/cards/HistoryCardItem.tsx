@@ -1,5 +1,6 @@
 import { Image } from "expo-image";
 import { SymbolView } from "expo-symbols";
+import type { ComponentProps } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -22,15 +23,17 @@ import {
 
 type HistoryCardItemProps = {
   card: UserCard;
-  isDeleting: boolean;
-  onDelete: (card: UserCard) => void;
+  actionIcon: ComponentProps<typeof SymbolView>["name"];
+  isActionPending: boolean;
+  onAction: (card: UserCard) => void;
   onPress: (card: UserCard) => void;
 };
 
 const HistoryCardItem = ({
   card,
-  isDeleting,
-  onDelete,
+  actionIcon,
+  isActionPending,
+  onAction,
   onPress,
 }: HistoryCardItemProps) => {
   const imageUri = cardImageUri(card.frontImageUrl);
@@ -76,21 +79,19 @@ const HistoryCardItem = ({
 
       <View style={styles.trailing}>
         <Text style={styles.price}>{formatPrice(card.price)}</Text>
-        {isDeleting ? (
+        {isActionPending ? (
           <ActivityIndicator color={Colors.danger} size="small" />
         ) : (
           <Pressable
-            accessibilityLabel={`Delete ${card.name}`}
-            accessibilityRole="button"
             hitSlop={scale(8)}
-            onPress={() => onDelete(card)}
+            onPress={() => onAction(card)}
             style={({ pressed }) => [
               styles.deleteButton,
               pressed && styles.deletePressed,
             ]}
           >
             <SymbolView
-              name={{ ios: "trash", android: "delete", web: "delete" }}
+              name={actionIcon}
               size={scale(16)}
               tintColor={Colors.danger}
             />

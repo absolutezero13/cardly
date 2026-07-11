@@ -1,3 +1,4 @@
+import { Image } from "expo-image";
 import { SymbolView } from "expo-symbols";
 import { useRef } from "react";
 import {
@@ -26,21 +27,32 @@ export type CollectionItemKind = "create" | "collection" | "favorite";
 type CollectionItemProps = {
   kind: CollectionItemKind;
   collection?: UserCollection;
+  cardCount?: number;
+  cardPreviewUris?: string[];
   isDeleting?: boolean;
   viewMode: CollectionViewMode;
   onCreate: () => void;
   onMore: (collection: UserCollection, anchor: PopoverAnchor) => void;
+  onPress?: () => void;
 };
 
 const CollectionItem = ({
   kind,
   collection,
+  cardCount,
+  cardPreviewUris = [],
   isDeleting = false,
   viewMode,
   onCreate,
   onMore,
+  onPress,
 }: CollectionItemProps) => {
   const moreButtonRef = useRef<View>(null);
+  const hasCardPreview = cardPreviewUris.length > 0;
+  const cardCountLabel =
+    cardCount === undefined
+      ? "Loading cards…"
+      : `${cardCount} ${cardCount === 1 ? "card" : "cards"}`;
 
   const handleMore = (targetCollection: UserCollection) => {
     moreButtonRef.current?.measureInWindow((x, y, width, height) => {
@@ -71,7 +83,12 @@ const CollectionItem = ({
 
     if (kind === "favorite") {
       return (
-        <View style={styles.listRow}>
+        <Pressable
+          accessibilityLabel="Favorites"
+          accessibilityRole="button"
+          onPress={onPress}
+          style={({ pressed }) => [styles.listRow, pressed && styles.pressed]}
+        >
           <View style={[styles.listIcon, styles.favoriteIcon]}>
             <SymbolView
               name={{ ios: "star.fill", android: "star", web: "star" }}
@@ -83,9 +100,9 @@ const CollectionItem = ({
             <Text numberOfLines={1} style={styles.listCollectionName}>
               Favorites
             </Text>
-            <Text style={styles.cardCount}>0 cards</Text>
+            <Text style={styles.cardCount}>{cardCountLabel}</Text>
           </View>
-        </View>
+        </Pressable>
       );
     }
 
@@ -94,19 +111,33 @@ const CollectionItem = ({
     }
 
     return (
-      <View style={styles.listRow}>
-        <View style={styles.listIcon}>
-          <SymbolView
-            name={{ ios: "folder", android: "folder", web: "folder" }}
-            size={scale(22)}
-            tintColor={Colors.primary}
-          />
+      <Pressable
+        accessibilityLabel={collection.name}
+        accessibilityRole="button"
+        onPress={onPress}
+        style={({ pressed }) => [styles.listRow, pressed && styles.pressed]}
+      >
+        <View style={[styles.listIcon, hasCardPreview && styles.listCoverFrame]}>
+          {hasCardPreview ? (
+            <Image
+              cachePolicy="memory-disk"
+              contentFit="cover"
+              source={{ uri: cardPreviewUris[0] }}
+              style={styles.listCover}
+            />
+          ) : (
+            <SymbolView
+              name={{ ios: "folder", android: "folder", web: "folder" }}
+              size={scale(22)}
+              tintColor={Colors.primary}
+            />
+          )}
         </View>
         <View style={styles.listCopy}>
           <Text numberOfLines={1} style={styles.listCollectionName}>
             {collection.name}
           </Text>
-          <Text style={styles.cardCount}>0 cards</Text>
+          <Text style={styles.cardCount}>{cardCountLabel}</Text>
         </View>
         <View
           ref={moreButtonRef}
@@ -130,7 +161,7 @@ const CollectionItem = ({
             />
           )}
         </View>
-      </View>
+      </Pressable>
     );
   }
 
@@ -156,7 +187,12 @@ const CollectionItem = ({
 
   if (kind === "favorite") {
     return (
-      <View style={styles.gridCard}>
+      <Pressable
+        accessibilityLabel="Favorites"
+        accessibilityRole="button"
+        onPress={onPress}
+        style={({ pressed }) => [styles.gridCard, pressed && styles.pressed]}
+      >
         <View style={styles.gridArtwork}>
           <SymbolView
             name={{ ios: "star.fill", android: "star", web: "star" }}
@@ -168,9 +204,9 @@ const CollectionItem = ({
           <Text numberOfLines={2} style={styles.collectionName}>
             Favorites
           </Text>
-          <Text style={styles.cardCount}>0 cards</Text>
+          <Text style={styles.cardCount}>{cardCountLabel}</Text>
         </View>
-      </View>
+      </Pressable>
     );
   }
 
@@ -179,19 +215,47 @@ const CollectionItem = ({
   }
 
   return (
-    <View style={styles.gridCard}>
+    <Pressable
+      accessibilityLabel={collection.name}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.gridCard, pressed && styles.pressed]}
+    >
       <View style={styles.gridArtwork}>
-        <SymbolView
-          name={{ ios: "folder", android: "folder", web: "folder" }}
-          size={scale(54)}
-          tintColor={withOpacity(Colors.textMuted, 0.48)}
-        />
+        {hasCardPreview ? (
+          <View style={styles.cardStack}>
+            {cardPreviewUris.map((uri, index) => (
+              <Image
+                cachePolicy="memory-disk"
+                contentFit="cover"
+                key={uri}
+                source={{ uri }}
+                style={[
+                  styles.cardPreview,
+                  cardPreviewUris.length === 1
+                    ? styles.cardPreviewFront
+                    : index === 0
+                    ? styles.cardPreviewLeft
+                    : index === 1
+                      ? styles.cardPreviewRight
+                      : styles.cardPreviewFront,
+                ]}
+              />
+            ))}
+          </View>
+        ) : (
+          <SymbolView
+            name={{ ios: "folder", android: "folder", web: "folder" }}
+            size={scale(54)}
+            tintColor={withOpacity(Colors.textMuted, 0.48)}
+          />
+        )}
       </View>
       <View style={styles.gridCopy}>
         <Text numberOfLines={2} style={styles.collectionName}>
           {collection.name}
         </Text>
-        <Text style={styles.cardCount}>0 cards</Text>
+        <Text style={styles.cardCount}>{cardCountLabel}</Text>
       </View>
       <View ref={moreButtonRef} collapsable={false} style={styles.moreButton}>
         {isDeleting ? (
@@ -210,7 +274,7 @@ const CollectionItem = ({
           />
         )}
       </View>
-    </View>
+    </Pressable>
   );
 };
 
@@ -248,6 +312,31 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  cardStack: {
+    width: scale(116),
+    height: scale(116),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardPreview: {
+    position: "absolute",
+    width: scale(64),
+    height: scale(90),
+    borderRadius: Radii.sm,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: withOpacity(Colors.white, 0.12),
+    backgroundColor: Colors.surfaceElevated,
+  },
+  cardPreviewLeft: {
+    transform: [{ translateX: scale(-20) }, { rotate: "-9deg" }],
+  },
+  cardPreviewRight: {
+    transform: [{ translateX: scale(20) }, { rotate: "9deg" }],
+  },
+  cardPreviewFront: {
+    transform: [{ translateY: scale(-3) }],
   },
   gridCopy: {
     gap: Spacing.xs,
@@ -288,6 +377,9 @@ const styles = StyleSheet.create({
   createListRow: {
     backgroundColor: Colors.primary,
   },
+  pressed: {
+    backgroundColor: Colors.surfaceElevated,
+  },
   listIcon: {
     width: scale(46),
     height: scale(46),
@@ -295,6 +387,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: withOpacity(Colors.white, 0.08),
+  },
+  listCoverFrame: {
+    backgroundColor: Colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: withOpacity(Colors.white, 0.1),
+  },
+  listCover: {
+    width: scale(42),
+    height: scale(42),
+    borderRadius: scale(13),
+    borderCurve: "continuous",
   },
   favoriteIcon: {
     backgroundColor: withOpacity(Colors.primary, 0.14),
