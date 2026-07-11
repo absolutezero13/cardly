@@ -48,9 +48,14 @@ const CardDetailScreen = ({ navigation, route }: Props) => {
   const scanDate = isScanResult ? null : formatScanDate(params.card.createdAt);
   const ownerId = useUserStore((state) => state.user?.uid);
   const addCard = useCardsStore((state) => state.addCard);
+  const upsertCard = useCardsStore((state) => state.upsertCard);
   const [cardSwapProgress] = useState(() => new Animated.Value(0));
   const [isBackActive, setIsBackActive] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUpdatingFavorite, setIsUpdatingFavorite] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(
+    params.kind === "savedCard" && Boolean(params.card.isFavorite),
+  );
   const confidence = Math.round(
     Math.min(1, Math.max(0, card.confidence)) * 100,
   );
@@ -102,6 +107,35 @@ const CardDetailScreen = ({ navigation, route }: Props) => {
       );
     } finally {
       setIsSaving(false);
+    }
+  };
+  const toggleFavorite = async () => {
+    if (params.kind !== "savedCard" || !ownerId || isUpdatingFavorite) {
+      return;
+    }
+
+    const previousIsFavorite = isFavorite;
+    const nextIsFavorite = !previousIsFavorite;
+
+    setIsFavorite(nextIsFavorite);
+    setIsUpdatingFavorite(true);
+
+    try {
+      const updatedCard = await cardService.updateCard(
+        ownerId,
+        params.card._id,
+        { isFavorite: nextIsFavorite },
+      );
+      setIsFavorite(Boolean(updatedCard.isFavorite));
+      upsertCard(updatedCard);
+    } catch (error) {
+      setIsFavorite(previousIsFavorite);
+      Alert.alert(
+        "Could not update favorite",
+        error instanceof CardServiceError ? error.message : "Please try again.",
+      );
+    } finally {
+      setIsUpdatingFavorite(false);
     }
   };
   const swapCards = () => {
@@ -341,6 +375,25 @@ const CardDetailScreen = ({ navigation, route }: Props) => {
           size={scale(44)}
         />
       </View>
+      {!isScanResult ? (
+        <View style={styles.favoriteButton}>
+          <IconButton
+            accessibilityLabel={
+              isFavorite ? "Remove card from favorites" : "Add card to favorites"
+            }
+            disabled={isUpdatingFavorite}
+            icon={{
+              ios: isFavorite ? "star.fill" : "star",
+              android: isFavorite ? "star" : "star_border",
+              web: isFavorite ? "star" : "star_border",
+            }}
+            iconSize={scale(20)}
+            onPress={() => void toggleFavorite()}
+            size={scale(44)}
+            tintColor={isFavorite ? Colors.primary : Colors.text}
+          />
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -357,6 +410,12 @@ const styles = StyleSheet.create({
   closeButton: {
     position: "absolute",
     right: Spacing.md,
+    zIndex: 10,
+    top: Spacing.md,
+  },
+  favoriteButton: {
+    position: "absolute",
+    left: Spacing.md,
     zIndex: 10,
     top: Spacing.md,
   },

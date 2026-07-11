@@ -33,9 +33,6 @@ import { formatPrice } from "@/utils/format";
 
 type Props = NativeStackScreenProps<RootStackParamList, "AddCardsToCollection">;
 
-const collectionIdForParams = (params: Props["route"]["params"]) =>
-  params.kind === "favorite" ? "favorite" : params.collectionId;
-
 const titleForParams = (params: Props["route"]["params"]) => {
   if (params.kind === "favorite") {
     return "Add to Favorites";
@@ -48,7 +45,6 @@ const AddCardsToCollectionScreen = ({ navigation, route }: Props) => {
   const insets = useSafeAreaInsets();
   const ownerId = useUserStore((state) => state.user?.uid);
   const params = route.params;
-  const targetCollectionId = collectionIdForParams(params);
   const allCards = useCardsStore((state) => state.cards);
   const status = useCardsStore((state) => state.status);
   const loadError = useCardsStore((state) => state.error);
@@ -58,8 +54,13 @@ const AddCardsToCollectionScreen = ({ navigation, route }: Props) => {
   const [isSaving, setIsSaving] = useState(false);
 
   const cards = useMemo(
-    () => allCards.filter((card) => card.collectionId !== targetCollectionId),
-    [allCards, targetCollectionId],
+    () =>
+      allCards.filter((card) =>
+        params.kind === "favorite"
+          ? !card.isFavorite
+          : card.collectionId !== params.collectionId,
+      ),
+    [allCards, params],
   );
 
   useEffect(() => {
@@ -108,7 +109,9 @@ const AddCardsToCollectionScreen = ({ navigation, route }: Props) => {
       const updatedCards = await Promise.all(
         [...selectedIds].map((cardId) =>
           cardService.updateCard(ownerId, cardId, {
-            collectionId: targetCollectionId,
+            ...(params.kind === "favorite"
+              ? { isFavorite: true }
+              : { collectionId: params.collectionId }),
           }),
         ),
       );

@@ -39,15 +39,11 @@ const titleForParams = (params: Props["route"]["params"]) => {
   return params.name;
 };
 
-const collectionIdForParams = (params: Props["route"]["params"]) =>
-  params.kind === "favorite" ? "favorite" : params.collectionId;
-
 const CollectionDetailScreen = ({ navigation, route }: Props) => {
   const insets = useSafeAreaInsets();
   const ownerId = useUserStore((state) => state.user?.uid);
   const params = route.params;
   const title = titleForParams(params);
-  const targetCollectionId = collectionIdForParams(params);
   const allCards = useCardsStore((state) => state.cards);
   const status = useCardsStore((state) => state.status);
   const loadError = useCardsStore((state) => state.error);
@@ -58,8 +54,13 @@ const CollectionDetailScreen = ({ navigation, route }: Props) => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const cards = useMemo(
-    () => allCards.filter((card) => card.collectionId === targetCollectionId),
-    [allCards, targetCollectionId],
+    () =>
+      allCards.filter((card) =>
+        params.kind === "favorite"
+          ? card.isFavorite
+          : card.collectionId === params.collectionId,
+      ),
+    [allCards, params],
   );
 
   useEffect(() => {
@@ -106,7 +107,9 @@ const CollectionDetailScreen = ({ navigation, route }: Props) => {
 
     try {
       const updatedCard = await cardService.updateCard(ownerId, card._id, {
-        collectionId: null,
+        ...(params.kind === "favorite"
+          ? { isFavorite: false }
+          : { collectionId: null }),
       });
       upsertCard(updatedCard);
     } catch (error) {
@@ -128,14 +131,20 @@ const CollectionDetailScreen = ({ navigation, route }: Props) => {
   };
 
   const requestDelete = (card: UserCard) => {
-    Alert.alert(card.name, "Remove this card from your collection?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Remove",
-        style: "destructive",
-        onPress: () => void removeCardFromCollection(card),
-      },
-    ]);
+    Alert.alert(
+      card.name,
+      params.kind === "favorite"
+        ? "Remove this card from Favorites?"
+        : "Remove this card from your collection?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: () => void removeCardFromCollection(card),
+        },
+      ],
+    );
   };
 
   const isLoading = status === "idle" || status === "loading";

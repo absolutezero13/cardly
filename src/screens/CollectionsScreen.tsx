@@ -117,6 +117,10 @@ const CollectionsScreen = () => {
 
     return counts;
   }, [cards]);
+  const favoriteCount = useMemo(
+    () => cards.filter((card) => card.isFavorite).length,
+    [cards],
+  );
 
   const cardPreviews = useMemo(() => {
     const previews = new Map<string, string[]>();
@@ -332,7 +336,7 @@ const CollectionsScreen = () => {
                 cardsStatus !== "ready"
                   ? undefined
                   : item.kind === "favorite"
-                    ? (cardCounts.get("favorite") ?? 0)
+                    ? favoriteCount
                     : item.kind === "collection"
                       ? (cardCounts.get(item.collection._id) ?? 0)
                       : undefined

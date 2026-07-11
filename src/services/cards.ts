@@ -20,6 +20,7 @@ export type UserCard = {
   _id: string;
   ownerId: string;
   collectionId: string | null;
+  isFavorite: boolean;
   name: string;
   setName: string;
   rarity: CardRarity;
@@ -35,6 +36,7 @@ export type UpdateCardInput = Partial<
   Pick<
     UserCard,
     | "collectionId"
+    | "isFavorite"
     | "name"
     | "setName"
     | "rarity"
