@@ -3,7 +3,6 @@ import { Image } from "expo-image";
 import { SymbolView } from "expo-symbols";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Pressable,
@@ -16,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppButton from "@/components/AppButton";
 import AppHeader, { getAppHeaderContentInset } from "@/components/AppHeader";
 import IconButton from "@/components/IconButton";
+import ScreenState from "@/components/ScreenState";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
 import { AnalyticsEvent, analyticsService } from "@/services/analytics";
 import cardService, { CardServiceError, cardImageUri } from "@/services/cards";
@@ -139,16 +139,12 @@ const AddCardsToCollectionScreen = ({ navigation, route }: Props) => {
   return (
     <View style={styles.root}>
       {isLoading ? (
-        <View style={styles.centerState}>
-          <ActivityIndicator color={Colors.primary} />
-          <Text style={styles.stateText}>Loading your cards…</Text>
-        </View>
+        <ScreenState kind="loading" message="Loading your cards…" />
       ) : status === "error" && allCards.length === 0 ? (
-        <View style={styles.centerState}>
-          <Text selectable style={styles.errorText}>
-            {loadError ?? "Could not load your cards."}
-          </Text>
-        </View>
+        <ScreenState
+          kind="error"
+          message={loadError ?? "Could not load your cards."}
+        />
       ) : (
         <>
           <FlatList
@@ -297,13 +293,6 @@ const styles = StyleSheet.create({
   stateText: {
     ...Typography.body,
     color: Colors.textMuted,
-    fontSize: scale(15),
-    lineHeight: scale(22),
-    textAlign: "center",
-  },
-  errorText: {
-    ...Typography.body,
-    color: Colors.danger,
     fontSize: scale(15),
     lineHeight: scale(22),
     textAlign: "center",

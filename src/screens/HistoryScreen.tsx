@@ -2,7 +2,6 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   RefreshControl,
@@ -12,9 +11,9 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import AppButton from "@/components/AppButton";
 import AppHeader, { getAppHeaderContentInset } from "@/components/AppHeader";
 import HistoryCardItem from "@/components/cards/HistoryCardItem";
+import ScreenState from "@/components/ScreenState";
 import { TAB_BAR_HEIGHT } from "@/navigation/constants";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
 import { AnalyticsEvent, analyticsService } from "@/services/analytics";
@@ -117,22 +116,13 @@ const HistoryScreen = () => {
   return (
     <View style={styles.root}>
       {isLoading ? (
-        <View style={styles.centerState}>
-          <ActivityIndicator color={Colors.primary} />
-          <Text style={styles.stateText}>Loading your cards…</Text>
-        </View>
+        <ScreenState kind="loading" message="Loading your cards…" />
       ) : status === "error" && cards.length === 0 ? (
-        <View style={styles.centerState}>
-          <Text selectable style={styles.errorText}>
-            {loadError ?? "Could not load your cards."}
-          </Text>
-          <View style={styles.retryButtonContainer}>
-            <AppButton
-              label="Try Again"
-              onPress={() => void reloadCards(false)}
-            />
-          </View>
-        </View>
+        <ScreenState
+          kind="error"
+          message={loadError ?? "Could not load your cards."}
+          onRetry={() => void reloadCards(false)}
+        />
       ) : (
         <FlatList
           contentContainerStyle={[
@@ -204,17 +194,6 @@ const styles = StyleSheet.create({
     fontSize: scale(15),
     lineHeight: scale(22),
     textAlign: "center",
-  },
-  errorText: {
-    ...Typography.body,
-    color: Colors.danger,
-    fontSize: scale(15),
-    lineHeight: scale(22),
-    textAlign: "center",
-  },
-  retryButtonContainer: {
-    width: "100%",
-    maxWidth: scale(220),
   },
 });
 

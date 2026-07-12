@@ -2,17 +2,14 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import AppButton from "@/components/AppButton";
 import AppHeader, { getAppHeaderContentInset } from "@/components/AppHeader";
 import CollectionActionsPopover, {
   type PopoverAnchor,
@@ -22,6 +19,7 @@ import CollectionsToolbar, {
   type CollectionViewMode,
 } from "@/components/collections/CollectionsToolbar";
 import CreateCollectionModal from "@/components/collections/CreateCollectionModal";
+import ScreenState from "@/components/ScreenState";
 import { TAB_BAR_HEIGHT } from "@/navigation/constants";
 import type {
   CollectionDetailParams,
@@ -35,7 +33,7 @@ import collectionService, {
 } from "@/services/collections";
 import useCardsStore from "@/stores/CardsStore";
 import useUserStore from "@/stores/UserStore";
-import { Colors, Layout, Spacing, Typography, scale } from "@/theme/Theme";
+import { Colors, Layout, Spacing, scale } from "@/theme/Theme";
 
 type CollectionListItem =
   | { kind: "create" }
@@ -295,19 +293,13 @@ const CollectionsScreen = () => {
   return (
     <View style={styles.root}>
       {isLoading ? (
-        <View style={styles.centerState}>
-          <ActivityIndicator color={Colors.primary} />
-          <Text style={styles.stateText}>Loading collections…</Text>
-        </View>
+        <ScreenState kind="loading" message="Loading collections…" />
       ) : loadError ? (
-        <View style={styles.centerState}>
-          <Text selectable style={styles.errorText}>
-            {loadError}
-          </Text>
-          <View style={styles.retryButtonContainer}>
-            <AppButton label="Try Again" onPress={() => reloadCollections()} />
-          </View>
-        </View>
+        <ScreenState
+          kind="error"
+          message={loadError}
+          onRetry={() => reloadCollections()}
+        />
       ) : (
         <FlatList
           key={viewMode}
@@ -414,31 +406,6 @@ const styles = StyleSheet.create({
   },
   gridRow: {
     gap: Spacing.md,
-  },
-  centerState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.md,
-    paddingHorizontal: Layout.screenHorizontalPadding,
-  },
-  stateText: {
-    ...Typography.body,
-    color: Colors.textMuted,
-    fontSize: scale(15),
-    lineHeight: scale(22),
-    textAlign: "center",
-  },
-  errorText: {
-    ...Typography.body,
-    color: Colors.danger,
-    fontSize: scale(15),
-    lineHeight: scale(22),
-    textAlign: "center",
-  },
-  retryButtonContainer: {
-    width: "100%",
-    maxWidth: scale(220),
   },
 });
 

@@ -2,7 +2,6 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SymbolView } from "expo-symbols";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   RefreshControl,
@@ -16,6 +15,7 @@ import AppButton from "@/components/AppButton";
 import AppHeader, { getAppHeaderContentInset } from "@/components/AppHeader";
 import HistoryCardItem from "@/components/cards/HistoryCardItem";
 import IconButton from "@/components/IconButton";
+import ScreenState from "@/components/ScreenState";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
 import { AnalyticsEvent, analyticsService } from "@/services/analytics";
 import cardService, { CardServiceError, type UserCard } from "@/services/cards";
@@ -158,22 +158,13 @@ const CollectionDetailScreen = ({ navigation, route }: Props) => {
   return (
     <View style={styles.root}>
       {isLoading ? (
-        <View style={styles.centerState}>
-          <ActivityIndicator color={Colors.primary} />
-          <Text style={styles.stateText}>Loading cards…</Text>
-        </View>
+        <ScreenState kind="loading" message="Loading cards…" />
       ) : status === "error" && allCards.length === 0 ? (
-        <View style={styles.centerState}>
-          <Text selectable style={styles.errorText}>
-            {loadError ?? "Could not load cards in this collection."}
-          </Text>
-          <View style={styles.retryButtonContainer}>
-            <AppButton
-              label="Try Again"
-              onPress={() => void reloadCards(false)}
-            />
-          </View>
-        </View>
+        <ScreenState
+          kind="error"
+          message={loadError ?? "Could not load cards in this collection."}
+          onRetry={() => void reloadCards(false)}
+        />
       ) : (
         <FlatList
           contentContainerStyle={[
@@ -282,13 +273,6 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.sm,
     paddingHorizontal: Layout.screenHorizontalPadding,
   },
-  centerState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.md,
-    paddingHorizontal: Layout.screenHorizontalPadding,
-  },
   emptyState: {
     flex: 1,
     alignItems: "center",
@@ -359,24 +343,6 @@ const styles = StyleSheet.create({
   emptyButtonContainer: {
     width: "100%",
     maxWidth: scale(240),
-  },
-  stateText: {
-    ...Typography.body,
-    color: Colors.textMuted,
-    fontSize: scale(15),
-    lineHeight: scale(22),
-    textAlign: "center",
-  },
-  errorText: {
-    ...Typography.body,
-    color: Colors.danger,
-    fontSize: scale(15),
-    lineHeight: scale(22),
-    textAlign: "center",
-  },
-  retryButtonContainer: {
-    width: "100%",
-    maxWidth: scale(220),
   },
 });
 
