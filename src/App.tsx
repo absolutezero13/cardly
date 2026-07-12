@@ -9,7 +9,7 @@ import auth from "./services/auth";
 import useUserStore from "./stores/UserStore";
 import { Colors, NavigationTheme } from "./theme/Theme";
 
-const AMPLITUDE_API_KEY = "REPLACE_WITH_AMPLITUDE_API_KEY";
+const AMPLITUDE_API_KEY = "32a20b274377a857d88c0ab3370d698d";
 const HAS_LAUNCHED_KEY = "hasLaunched";
 
 const trackFirstLaunch = async () => {
@@ -50,10 +50,7 @@ const App = () => {
 
   return (
     <SafeAreaProvider>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={Colors.background}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
       <NavigationContainer theme={NavigationTheme}>
         <RootNavigation hasUser={Boolean(user)} />
       </NavigationContainer>
