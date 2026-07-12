@@ -112,18 +112,23 @@ const HistoryScreen = () => {
   };
 
   const isLoading = status === "idle" || status === "loading";
+  const hasLoadError =
+    !isLoading && status === "error" && cards.length === 0;
+  const shouldShowCards = !isLoading && !hasLoadError;
 
   return (
     <View style={styles.root}>
-      {isLoading ? (
+      {isLoading && (
         <ScreenState kind="loading" message="Loading your cards…" />
-      ) : status === "error" && cards.length === 0 ? (
+      )}
+      {hasLoadError && (
         <ScreenState
           kind="error"
           message={loadError ?? "Could not load your cards."}
           onRetry={() => void reloadCards(false)}
         />
-      ) : (
+      )}
+      {shouldShowCards && (
         <FlatList
           contentContainerStyle={[
             styles.listContent,

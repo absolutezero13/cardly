@@ -42,6 +42,7 @@ import {
 } from "@/theme/Theme";
 
 type CardSide = "front" | "back";
+type CardImages = Record<CardSide, string | null>;
 type ZoomLevel = 1 | 2;
 
 const SIDES: { side: CardSide; label: string }[] = [
@@ -65,6 +66,22 @@ const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
   quality: 0.6,
 };
 
+const getCaptureHint = (images: CardImages, activeSide: CardSide) => {
+  if (images.front && images.back) {
+    return "Both sides captured";
+  }
+
+  if (images.front) {
+    return "Front captured — now scan the back";
+  }
+
+  if (images.back) {
+    return "Back captured — now scan the front";
+  }
+
+  return `Position the ${activeSide} of your card in the frame`;
+};
+
 const ScanCardScreen = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -85,7 +102,7 @@ const ScanCardScreen = () => {
     { photoAspectRatio: 4 / 3 },
   ]);
 
-  const [images, setImages] = useState<Record<CardSide, string | null>>({
+  const [images, setImages] = useState<CardImages>({
     front: null,
     back: null,
   });
@@ -108,13 +125,7 @@ const ScanCardScreen = () => {
   const cameraZoom = cameraDevice
     ? Math.min(Math.max(zoomLevel, cameraDevice.minZoom), cameraDevice.maxZoom)
     : 1;
-  const captureHint = isReady
-    ? "Both sides captured"
-    : images.front && !images.back
-      ? "Front captured — now scan the back"
-      : images.back && !images.front
-        ? "Back captured — now scan the front"
-        : `Position the ${activeSide} of your card in the frame`;
+  const captureHint = getCaptureHint(images, activeSide);
 
   const measureView = (view: View | null) =>
     new Promise<MeasuredRect | null>((resolve) => {

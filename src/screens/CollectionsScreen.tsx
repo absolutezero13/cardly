@@ -290,17 +290,67 @@ const CollectionsScreen = () => {
     ]);
   };
 
+  const renderCollectionItem = (item: CollectionListItem) => {
+    let cardCount: number | undefined;
+
+    if (cardsStatus === "ready") {
+      if (item.kind === "favorite") {
+        cardCount = favoriteCount;
+      } else if (item.kind === "collection") {
+        cardCount = cardCounts.get(item.collection._id) ?? 0;
+      }
+    }
+
+    let onPress: (() => void) | undefined;
+
+    if (item.kind === "favorite") {
+      onPress = () => openCollectionDetail({ kind: "favorite" });
+    } else if (item.kind === "collection") {
+      onPress = () =>
+        openCollectionDetail({
+          kind: "collection",
+          collectionId: item.collection._id,
+          name: item.collection.name,
+        });
+    }
+
+    return (
+      <CollectionItem
+        collection={item.kind === "collection" ? item.collection : undefined}
+        cardCount={cardCount}
+        cardPreviewUris={
+          item.kind === "collection"
+            ? cardPreviews.get(item.collection._id)
+            : undefined
+        }
+        isDeleting={
+          item.kind === "collection" && deletingId === item.collection._id
+        }
+        kind={item.kind}
+        onCreate={() => setIsCreateVisible(true)}
+        onMore={openCollectionActions}
+        onPress={onPress}
+        viewMode={viewMode}
+      />
+    );
+  };
+
+  const hasLoadError = !isLoading && Boolean(loadError);
+  const shouldShowCollections = !isLoading && !hasLoadError;
+
   return (
     <View style={styles.root}>
-      {isLoading ? (
+      {isLoading && (
         <ScreenState kind="loading" message="Loading collections…" />
-      ) : loadError ? (
+      )}
+      {hasLoadError && (
         <ScreenState
           kind="error"
-          message={loadError}
+          message={loadError ?? "Could not load collections."}
           onRetry={() => reloadCollections()}
         />
-      ) : (
+      )}
+      {shouldShowCollections && (
         <FlatList
           key={viewMode}
           columnWrapperStyle={viewMode === "grid" ? styles.gridRow : undefined}
@@ -330,46 +380,7 @@ const CollectionsScreen = () => {
               tintColor={Colors.primary}
             />
           }
-          renderItem={({ item }) => (
-            <CollectionItem
-              collection={
-                item.kind === "collection" ? item.collection : undefined
-              }
-              cardCount={
-                cardsStatus !== "ready"
-                  ? undefined
-                  : item.kind === "favorite"
-                    ? favoriteCount
-                    : item.kind === "collection"
-                      ? (cardCounts.get(item.collection._id) ?? 0)
-                      : undefined
-              }
-              cardPreviewUris={
-                item.kind === "collection"
-                  ? cardPreviews.get(item.collection._id)
-                  : undefined
-              }
-              isDeleting={
-                item.kind === "collection" && deletingId === item.collection._id
-              }
-              kind={item.kind}
-              onCreate={() => setIsCreateVisible(true)}
-              onMore={openCollectionActions}
-              onPress={
-                item.kind === "favorite"
-                  ? () => openCollectionDetail({ kind: "favorite" })
-                  : item.kind === "collection"
-                    ? () =>
-                        openCollectionDetail({
-                          kind: "collection",
-                          collectionId: item.collection._id,
-                          name: item.collection.name,
-                        })
-                    : undefined
-              }
-              viewMode={viewMode}
-            />
-          )}
+          renderItem={({ item }) => renderCollectionItem(item)}
           showsVerticalScrollIndicator={false}
         />
       )}

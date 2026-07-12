@@ -232,13 +232,7 @@ const CollectionItem = ({
                 source={{ uri }}
                 style={[
                   styles.cardPreview,
-                  cardPreviewUris.length === 1
-                    ? styles.cardPreviewFront
-                    : index === 0
-                    ? styles.cardPreviewLeft
-                    : index === 1
-                      ? styles.cardPreviewRight
-                      : styles.cardPreviewFront,
+                  getCardPreviewPositionStyle(cardPreviewUris.length, index),
                 ]}
               />
             ))}
@@ -425,5 +419,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
+
+const getCardPreviewPositionStyle = (previewCount: number, index: number) => {
+  if (previewCount === 1 || index > 1) {
+    return styles.cardPreviewFront;
+  }
+
+  return index === 0 ? styles.cardPreviewLeft : styles.cardPreviewRight;
+};
 
 export default CollectionItem;

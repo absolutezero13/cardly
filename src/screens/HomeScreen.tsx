@@ -150,19 +150,21 @@ const HomeScreen = () => {
           </View>
         </View>
 
-        {isLoadingCards ? (
+        {isLoadingCards && (
           <View style={styles.loadingState}>
             <ActivityIndicator color={Colors.primary} />
             <Text style={styles.loadingText}>Loading your cards…</Text>
           </View>
-        ) : recentCards.length > 0 ? (
+        )}
+        {!isLoadingCards && recentCards.length > 0 && (
           <RecentScansSection
             cards={recentCards}
             onPressCard={(card) =>
               navigation.navigate("CardDetail", { kind: "savedCard", card })
             }
           />
-        ) : (
+        )}
+        {!isLoadingCards && recentCards.length === 0 && (
           <View style={styles.emptyState}>
             <View style={styles.emptyIcon}>
               <SymbolView

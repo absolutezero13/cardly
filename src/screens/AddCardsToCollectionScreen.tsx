@@ -135,17 +135,22 @@ const AddCardsToCollectionScreen = ({ navigation, route }: Props) => {
   };
 
   const isLoading = status === "idle" || status === "loading";
+  const hasLoadError =
+    !isLoading && status === "error" && allCards.length === 0;
+  const shouldShowCards = !isLoading && !hasLoadError;
 
   return (
     <View style={styles.root}>
-      {isLoading ? (
+      {isLoading && (
         <ScreenState kind="loading" message="Loading your cards…" />
-      ) : status === "error" && allCards.length === 0 ? (
+      )}
+      {hasLoadError && (
         <ScreenState
           kind="error"
           message={loadError ?? "Could not load your cards."}
         />
-      ) : (
+      )}
+      {shouldShowCards && (
         <>
           <FlatList
             contentContainerStyle={[
