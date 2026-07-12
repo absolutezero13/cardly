@@ -17,6 +17,7 @@ import AppHeader, { getAppHeaderContentInset } from "@/components/AppHeader";
 import HistoryCardItem from "@/components/cards/HistoryCardItem";
 import IconButton from "@/components/IconButton";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
+import { AnalyticsEvent, analyticsService } from "@/services/analytics";
 import cardService, { CardServiceError, type UserCard } from "@/services/cards";
 import useCardsStore from "@/stores/CardsStore";
 import useUserStore from "@/stores/UserStore";
@@ -114,10 +115,14 @@ const CollectionDetailScreen = ({ navigation, route }: Props) => {
       });
       upsertCard(updatedCard);
     } catch (error) {
-      Alert.alert(
-        "Could not remove card",
-        error instanceof CardServiceError ? error.message : "Please try again.",
-      );
+      const message =
+        error instanceof CardServiceError ? error.message : "Please try again.";
+
+      analyticsService.logEvent(AnalyticsEvent.ActionError, {
+        action: "card_remove_from_collection",
+        message,
+      });
+      Alert.alert("Could not remove card", message);
     } finally {
       setDeletingId(null);
     }

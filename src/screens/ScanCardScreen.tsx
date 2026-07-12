@@ -30,6 +30,7 @@ import IconButton from "@/components/IconButton";
 import ScanCardSide from "@/components/ScanCardSide";
 import ScanLoadingScreen from "@/components/ScanLoadingScreen";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
+import { AnalyticsEvent, analyticsService } from "@/services/analytics";
 import scanService, { ScanCardError } from "@/services/scan";
 import {
   Colors,
@@ -188,7 +189,15 @@ const ScanCardScreen = () => {
         : `file://${photo.path}`;
 
       await assignImage(photoUri, capturedSide);
+      analyticsService.logEvent(AnalyticsEvent.CardImageAdded, {
+        side: capturedSide,
+        source: "camera",
+      });
     } catch {
+      analyticsService.logEvent(AnalyticsEvent.ActionError, {
+        action: "capture",
+        message: "Could not take a photo on this device.",
+      });
       Alert.alert(
         "Capture failed",
         "Could not take a photo on this device. Try picking from your library instead.",
@@ -205,10 +214,15 @@ const ScanCardScreen = () => {
       return;
     }
 
+    const pickedSide = activeSide;
     const result = await ImagePicker.launchImageLibraryAsync(PICKER_OPTIONS);
 
     if (!result.canceled && result.assets?.[0]) {
-      await assignImage(result.assets[0].uri);
+      await assignImage(result.assets[0].uri, pickedSide);
+      analyticsService.logEvent(AnalyticsEvent.CardImageAdded, {
+        side: pickedSide,
+        source: "gallery",
+      });
     }
   };
 
@@ -218,6 +232,7 @@ const ScanCardScreen = () => {
     }
 
     setIsIdentifying(true);
+    const startedAt = Date.now();
 
     try {
       const result = await scanService.identifyCard({
@@ -225,6 +240,12 @@ const ScanCardScreen = () => {
         backUri: images.back,
       });
 
+      analyticsService.logEvent(AnalyticsEvent.ScanSucceeded, {
+        rarity: result.rarity,
+        price: result.price,
+        confidence: result.confidence,
+        durationMs: Date.now() - startedAt,
+      });
       navigation.replace("CardDetail", {
         kind: "scanResult",
         result,
@@ -232,12 +253,17 @@ const ScanCardScreen = () => {
         backUri: images.back,
       });
     } catch (error) {
-      Alert.alert(
-        "Scan failed",
+      const message =
         error instanceof ScanCardError
           ? error.message
-          : "Something went wrong. Please try again.",
-      );
+          : "Something went wrong. Please try again.";
+
+      analyticsService.logEvent(AnalyticsEvent.ScanFailed, {
+        code: error instanceof ScanCardError ? error.code : undefined,
+        message,
+        durationMs: Date.now() - startedAt,
+      });
+      Alert.alert("Scan failed", message);
     } finally {
       setIsIdentifying(false);
     }

@@ -17,6 +17,7 @@ import AppHeader, { getAppHeaderContentInset } from "@/components/AppHeader";
 import HistoryCardItem from "@/components/cards/HistoryCardItem";
 import { TAB_BAR_HEIGHT } from "@/navigation/constants";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
+import { AnalyticsEvent, analyticsService } from "@/services/analytics";
 import cardService, { CardServiceError, type UserCard } from "@/services/cards";
 import useCardsStore from "@/stores/CardsStore";
 import useUserStore from "@/stores/UserStore";
@@ -83,10 +84,14 @@ const HistoryScreen = () => {
       await cardService.deleteCard(ownerId, card);
       removeCard(card._id);
     } catch (error) {
-      Alert.alert(
-        "Could not delete card",
-        error instanceof CardServiceError ? error.message : "Please try again.",
-      );
+      const message =
+        error instanceof CardServiceError ? error.message : "Please try again.";
+
+      analyticsService.logEvent(AnalyticsEvent.ActionError, {
+        action: "card_delete",
+        message,
+      });
+      Alert.alert("Could not delete card", message);
     } finally {
       setDeletingId(null);
     }

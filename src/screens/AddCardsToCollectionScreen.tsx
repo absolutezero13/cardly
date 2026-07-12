@@ -17,6 +17,7 @@ import AppButton from "@/components/AppButton";
 import AppHeader, { getAppHeaderContentInset } from "@/components/AppHeader";
 import IconButton from "@/components/IconButton";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
+import { AnalyticsEvent, analyticsService } from "@/services/analytics";
 import cardService, { CardServiceError, cardImageUri } from "@/services/cards";
 import useCardsStore from "@/stores/CardsStore";
 import useUserStore from "@/stores/UserStore";
@@ -120,10 +121,14 @@ const AddCardsToCollectionScreen = ({ navigation, route }: Props) => {
       updatedCards.forEach((card) => upsertCard(card));
       navigation.goBack();
     } catch (error) {
-      Alert.alert(
-        "Could not add cards",
-        error instanceof CardServiceError ? error.message : "Please try again.",
-      );
+      const message =
+        error instanceof CardServiceError ? error.message : "Please try again.";
+
+      analyticsService.logEvent(AnalyticsEvent.ActionError, {
+        action: "cards_add_to_collection",
+        message,
+      });
+      Alert.alert("Could not add cards", message);
     } finally {
       setIsSaving(false);
     }

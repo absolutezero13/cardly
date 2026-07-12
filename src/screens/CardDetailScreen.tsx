@@ -18,6 +18,7 @@ import AppButton from "@/components/AppButton";
 import AppHeader, { getAppHeaderContentInset } from "@/components/AppHeader";
 import IconButton from "@/components/IconButton";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
+import { AnalyticsEvent, analyticsService } from "@/services/analytics";
 import cardService, { CardServiceError, cardImageUri } from "@/services/cards";
 import useCardsStore from "@/stores/CardsStore";
 import useUserStore from "@/stores/UserStore";
@@ -99,13 +100,22 @@ const CardDetailScreen = ({ navigation, route }: Props) => {
           backUri: params.backUri,
         },
       );
+      analyticsService.logEvent(AnalyticsEvent.CardSaved, {
+        rarity: savedCard.rarity,
+        price: savedCard.price,
+        confidence: savedCard.confidence,
+      });
       addCard(savedCard);
       close();
     } catch (error) {
-      Alert.alert(
-        "Could not save card",
-        error instanceof CardServiceError ? error.message : "Please try again.",
-      );
+      const message =
+        error instanceof CardServiceError ? error.message : "Please try again.";
+
+      analyticsService.logEvent(AnalyticsEvent.ActionError, {
+        action: "card_save",
+        message,
+      });
+      Alert.alert("Could not save card", message);
     } finally {
       setIsSaving(false);
     }
@@ -131,10 +141,14 @@ const CardDetailScreen = ({ navigation, route }: Props) => {
       upsertCard(updatedCard);
     } catch (error) {
       setIsFavorite(previousIsFavorite);
-      Alert.alert(
-        "Could not update favorite",
-        error instanceof CardServiceError ? error.message : "Please try again.",
-      );
+      const message =
+        error instanceof CardServiceError ? error.message : "Please try again.";
+
+      analyticsService.logEvent(AnalyticsEvent.ActionError, {
+        action: "favorite_toggle",
+        message,
+      });
+      Alert.alert("Could not update favorite", message);
     } finally {
       setIsUpdatingFavorite(false);
     }

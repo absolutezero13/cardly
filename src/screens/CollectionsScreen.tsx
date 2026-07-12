@@ -27,6 +27,7 @@ import type {
   CollectionDetailParams,
   RootStackParamList,
 } from "@/navigation/RootNavigation";
+import { AnalyticsEvent, analyticsService } from "@/services/analytics";
 import { cardImageUri } from "@/services/cards";
 import collectionService, {
   CollectionServiceError,
@@ -225,12 +226,16 @@ const CollectionsScreen = () => {
       setIsCreateVisible(false);
       setCollectionName("");
     } catch (error) {
-      Alert.alert(
-        "Could not create collection",
+      const message =
         error instanceof CollectionServiceError
           ? error.message
-          : "Please try again.",
-      );
+          : "Please try again.";
+
+      analyticsService.logEvent(AnalyticsEvent.ActionError, {
+        action: "collection_create",
+        message,
+      });
+      Alert.alert("Could not create collection", message);
     } finally {
       setIsCreating(false);
     }
@@ -249,12 +254,16 @@ const CollectionsScreen = () => {
         current.filter((item) => item._id !== collection._id),
       );
     } catch (error) {
-      Alert.alert(
-        "Could not delete collection",
+      const message =
         error instanceof CollectionServiceError
           ? error.message
-          : "Please try again.",
-      );
+          : "Please try again.";
+
+      analyticsService.logEvent(AnalyticsEvent.ActionError, {
+        action: "collection_delete",
+        message,
+      });
+      Alert.alert("Could not delete collection", message);
     } finally {
       setDeletingId(null);
     }

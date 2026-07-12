@@ -6,6 +6,7 @@ import {
 } from "@react-native-firebase/auth";
 import useCardsStore from "../stores/CardsStore";
 import useUserStore from "../stores/UserStore";
+import { AnalyticsEvent, analyticsService } from "./analytics";
 import userService from "./user";
 
 class AuthService {
@@ -19,6 +20,7 @@ class AuthService {
     }
 
     const userCredential = await firebaseSignInAnonymously(firebaseAuth);
+    analyticsService.logEvent(AnalyticsEvent.SignIn);
 
     return userCredential.user.uid;
   }
@@ -43,6 +45,7 @@ class AuthService {
     }
 
     useUserStore.getState().setUser(uid ? { uid } : null);
+    analyticsService.setUserId(uid);
 
     if (uid) {
       userService.saveUser(uid).catch((error) => {

@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AppButton from "@/components/AppButton";
+import { AnalyticsEvent, analyticsService } from "@/services/analytics";
 import auth from "@/services/auth";
 import {
   Colors,
@@ -44,9 +45,14 @@ const WelcomeScreen = () => {
       await auth.signInAnonymously();
     } catch (error) {
       console.error("Anonymous authentication failed", error);
-      setErrorMessage(
-        error instanceof Error ? error.message : "Unable to get started.",
-      );
+      const message =
+        error instanceof Error ? error.message : "Unable to get started.";
+
+      analyticsService.logEvent(AnalyticsEvent.ActionError, {
+        action: "sign_in",
+        message,
+      });
+      setErrorMessage(message);
     } finally {
       setIsStarting(false);
     }
