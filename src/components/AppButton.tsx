@@ -54,7 +54,7 @@ const AppButton = ({
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
       disabled={disabled || loading}
       onPress={onPress}
-      style={[styles.pressable, (disabled || loading) && styles.disabled]}
+      style={[styles.pressable, disabled && styles.disabled]}
     >
       {isGlassAvailable ? (
         <GlassView
