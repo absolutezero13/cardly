@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "cardly",
+    "name": "Cardly AI",
     "slug": "cardly",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -54,14 +54,14 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Cardly needs access to your photos so you can pick card images from your library.",
+          "photosPermission": "Cardly AI needs access to your photos so you can pick card images from your library.",
           "microphonePermission": false
         }
       ],
       [
         "react-native-vision-camera",
         {
-          "cameraPermissionText": "Cardly uses your camera to capture the front and back of your trading cards.",
+          "cameraPermissionText": "Cardly AI uses your camera to capture the front and back of your trading cards.",
           "enableFrameProcessors": false,
           "enableMicrophonePermission": false
         }

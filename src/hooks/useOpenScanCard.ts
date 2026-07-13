@@ -18,7 +18,7 @@ const useOpenScanCard = () => {
 
     Alert.alert(
       "Camera access needed",
-      "Cardly needs the camera to capture your card. You can enable it in Settings.",
+      "Cardly AI needs the camera to capture your card. You can enable it in Settings.",
       [
         { text: "Not Now", style: "cancel" },
         { text: "Open Settings", onPress: () => Linking.openSettings() },

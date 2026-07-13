@@ -101,7 +101,7 @@ class ScanService {
           error.response?.data?.error ??
           (error.response
             ? "The card could not be scanned. Please try again."
-            : "Could not reach Cardly. Check your connection and try again.");
+            : "Could not reach Cardly AI. Check your connection and try again.");
 
         throw new ScanCardError(message, error.response?.data?.code);
       }

@@ -69,7 +69,7 @@ const cardError = (error: unknown, fallback: string) => {
       error.response?.data?.error ??
         (error.response
           ? fallback
-          : "Could not reach Cardly. Check your connection and try again."),
+          : "Could not reach Cardly AI. Check your connection and try again."),
     );
   }
 
