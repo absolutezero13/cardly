@@ -2,10 +2,14 @@ import { getAuth } from "@react-native-firebase/auth";
 import axios from "axios";
 import { Platform } from "react-native";
 
-const devApiHost = Platform.OS === "android" ? "10.0.2.2" : "192.168.1.26";
+const devApiHost =
+  Platform.OS === "android"
+    ? "http://10.0.2.2:3000"
+    : "http://192.168.1.28:3000";
+const remoteApiHost = "https://cardly-be.vercel.app";
 
 const api = axios.create({
-  baseURL: "https://cardly-be.vercel.app",
+  baseURL: remoteApiHost,
   headers: {
     "Content-Type": "application/json",
   },
