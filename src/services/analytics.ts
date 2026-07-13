@@ -1,5 +1,5 @@
-import * as Amplitude from "@amplitude/analytics-react-native";
 import type { CardRarity } from "@/types/card";
+import * as Amplitude from "@amplitude/analytics-react-native";
 
 export enum AnalyticsEvent {
   FirstLaunch = "first_launch",
@@ -73,11 +73,6 @@ class AmplitudeProvider implements IAnalyticsProvider {
   }
 
   logEvent<T extends AnalyticsEvent>(event: T, params?: EventParams[T]): void {
-    if (__DEV__) {
-      console.log("Amplitude event: NOT LOGGED", event, params);
-      return;
-    }
-
     if (params) {
       Amplitude.track(event, params);
     } else {

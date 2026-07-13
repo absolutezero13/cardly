@@ -1,7 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useVideoPlayer, VideoView } from "expo-video";
-import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AppButton from "@/components/AppButton";
@@ -14,32 +14,19 @@ import {
   Typography,
   withOpacity,
 } from "@/theme/Theme";
-
-const WELCOME_VIDEO = require("../../assets/videos/welcome.mp4");
-const BUTTON_REVEAL_DELAY_MS = 3000;
+import welcomeVideo from "../../assets/videos/welcome.mp4";
 
 const WelcomeScreen = () => {
   const [isStarting, setIsStarting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [showButton, setShowButton] = useState(false);
 
-  const player = useVideoPlayer(WELCOME_VIDEO, (nextPlayer) => {
+  const player = useVideoPlayer(welcomeVideo, (nextPlayer) => {
     nextPlayer.loop = true;
     nextPlayer.muted = true;
     nextPlayer.play();
   });
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setShowButton(true);
-    }, BUTTON_REVEAL_DELAY_MS);
-
-    return () => clearTimeout(timeout);
-  }, []);
-
   const getStarted = async () => {
     setIsStarting(true);
-    setErrorMessage(null);
 
     try {
       await auth.signInAnonymously();
@@ -52,7 +39,6 @@ const WelcomeScreen = () => {
         action: "sign_in",
         message,
       });
-      setErrorMessage(message);
     } finally {
       setIsStarting(false);
     }
@@ -81,20 +67,13 @@ const WelcomeScreen = () => {
         edges={["top", "bottom", "left", "right"]}
         style={styles.overlay}
       >
-        {showButton ? (
-          <View style={styles.action}>
-            {errorMessage ? (
-              <Text selectable style={styles.errorMessage}>
-                {errorMessage}
-              </Text>
-            ) : null}
-            <AppButton
-              label="Get Started"
-              loading={isStarting}
-              onPress={() => void getStarted()}
-            />
-          </View>
-        ) : null}
+        <View style={styles.action}>
+          <AppButton
+            label="Get Started"
+            loading={isStarting}
+            onPress={getStarted}
+          />
+        </View>
       </SafeAreaView>
     </View>
   );
