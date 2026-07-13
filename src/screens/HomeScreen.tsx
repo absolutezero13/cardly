@@ -190,9 +190,6 @@ const HomeScreen = () => {
             </View>
             <View style={styles.emptyCopy}>
               <Text style={styles.emptyTitle}>No cards yet</Text>
-              <Text style={styles.emptyText}>
-                Scan your first card to start building your collection.
-              </Text>
             </View>
             <View style={styles.emptyButtonContainer}>
               <AppButton
