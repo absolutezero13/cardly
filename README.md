@@ -21,18 +21,6 @@ The project is split by responsibility:
 
 The backend is a single Node.js and Express service deployed on Vercel. It keeps the Gemini credential, structured analysis prompt, authentication, and database access outside the mobile app. Routes compose Firebase authentication and database middleware with focused controllers; Gemini analysis stays in a service, while Mongoose schemas own persistence validation. The MongoDB connection is cached across warm serverless invocations. This keeps the service small without collapsing server responsibilities into the client.
 
-## Scan and save flow
-
-Identification and persistence are separate steps:
-
-1. The user captures or selects the front and back images.
-2. The app optimizes them and sends both to `POST /cards/scan`.
-3. The backend asks Gemini for structured card metadata and returns it without writing to MongoDB.
-4. The user reviews the name, set, rarity, estimated value, and confidence.
-5. If the result is saved, the app uploads both images to Firebase Storage and sends the download URLs to `POST /cards`.
-
-This keeps abandoned or incorrect scans out of the database. Temporary optimized files are deleted after each attempt. If an image upload or the MongoDB save fails, the app also tries to remove any Storage objects created during that attempt.
-
 ## State management
 
 Zustand is used only for state that needs to be shared across screens:
@@ -81,10 +69,8 @@ Amplitude is initialized when the app starts. The current events cover first lau
 
 ## Assumptions and tradeoffs
 
-- The provided reference app was treated as product direction rather than a pixel-perfect target.
 - Anonymous auth was chosen for simplicity and to avoid a separate sign-in flow, while keeping the auth boundary on the backend. The tradeoff is that the account cannot be recovered on another device, or after local auth state is lost, until an account-linking flow is added.
 - Cards use one optional collection rather than many-to-many membership because multi-collection support was not required.
-- Collection rename is supported by the backend but was not added to the mobile UI.
 
 ## How AI was used during development
 
@@ -100,41 +86,3 @@ npm run ios     # or: npm run android
 ```
 
 Cardly AI requires a development build. The native run command builds and opens the app; use `npm start` for later JavaScript-only development sessions. Firebase native configuration is supplied through `GoogleService-Info.plist` on iOS and `google-services.json` on Android.
-
-The deployed API URL currently lives in `src/api/index.ts`, and the Amplitude key lives in `src/App.tsx`. Both should move to environment-based configuration before introducing separate development, staging, and production builds.
-
-### Backend
-
-The backend requires Node.js 20 or newer. From the `cardly-be` repository:
-
-```bash
-npm install
-cp .env.example .env
-npm run dev
-```
-
-Backend configuration:
-
-```dotenv
-MONGODB_URI=
-GEMINI_API_KEY=
-GEMINI_CARD_ANALYSIS_MODEL=gemini-2.5-flash-lite
-MAX_CARD_IMAGE_BYTES=2097152
-FIREBASE_PROJECT_ID=
-FIREBASE_CLIENT_EMAIL=
-FIREBASE_PRIVATE_KEY=
-PORT=3000
-```
-
-`MONGODB_URI` and `GEMINI_API_KEY` are required. The model, image-size limit, and port have the defaults shown above. Firebase service-account values are required in hosted environments; local development can use Application Default Credentials instead. `FIREBASE_PRIVATE_KEY` may contain escaped `\\n` sequences, which the backend converts before creating the Firebase Admin credential.
-
-## Validation and technical notes
-
-```bash
-# Mobile
-npx tsc --noEmit
-npm run lint
-
-# Backend, from cardly-be
-npm run typecheck
-```
