@@ -2,20 +2,14 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SymbolView } from "expo-symbols";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import AppButton from "@/components/AppButton";
 import AppHeader, { getAppHeaderContentInset } from "@/components/AppHeader";
 import RecentScansSection from "@/components/cards/RecentScansSection";
 import IconButton from "@/components/IconButton";
+import ScreenState from "@/components/ScreenState";
 import useOpenScanCard from "@/hooks/useOpenScanCard";
 import type { RootStackParamList } from "@/navigation/RootNavigation";
 import auth from "@/services/auth";
@@ -39,6 +33,7 @@ const HomeScreen = () => {
   const ownerId = useUserStore((state) => state.user?.uid);
   const cards = useCardsStore((state) => state.cards);
   const cardsStatus = useCardsStore((state) => state.status);
+  const cardsError = useCardsStore((state) => state.error);
   const ensureCardsLoaded = useCardsStore((state) => state.ensureLoaded);
   const [collectionCount, setCollectionCount] = useState<number | null>(null);
   const openScanCard = useOpenScanCard();
@@ -112,6 +107,14 @@ const HomeScreen = () => {
   }, [signOut]);
 
   const isLoadingCards = cardsStatus === "idle" || cardsStatus === "loading";
+  const hasCardsError = cardsStatus === "error" && cards.length === 0;
+  const showCards = !isLoadingCards && !hasCardsError;
+
+  const retryCards = () => {
+    if (ownerId) {
+      void ensureCardsLoaded(ownerId);
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -135,7 +138,7 @@ const HomeScreen = () => {
               tintColor={Colors.primary}
             />
             <Text style={styles.statValue}>
-              {isLoadingCards ? "—" : cards.length}
+              {isLoadingCards || hasCardsError ? "—" : cards.length}
             </Text>
             <Text style={styles.statLabel}>Cards scanned</Text>
           </View>
@@ -150,21 +153,29 @@ const HomeScreen = () => {
           </View>
         </View>
 
-        {isLoadingCards && (
-          <View style={styles.loadingState}>
-            <ActivityIndicator color={Colors.primary} />
-            <Text style={styles.loadingText}>Loading your cards…</Text>
+        {isLoadingCards ? (
+          <View style={styles.screenState}>
+            <ScreenState kind="loading" message="Loading your cards…" />
           </View>
-        )}
-        {!isLoadingCards && recentCards.length > 0 && (
+        ) : null}
+        {hasCardsError ? (
+          <View style={styles.screenState}>
+            <ScreenState
+              kind="error"
+              message={cardsError ?? "Could not load your cards."}
+              onRetry={retryCards}
+            />
+          </View>
+        ) : null}
+        {showCards && recentCards.length > 0 ? (
           <RecentScansSection
             cards={recentCards}
             onPressCard={(card) =>
               navigation.navigate("CardDetail", { kind: "savedCard", card })
             }
           />
-        )}
-        {!isLoadingCards && recentCards.length === 0 && (
+        ) : null}
+        {showCards && recentCards.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIcon}>
               <SymbolView
@@ -195,7 +206,7 @@ const HomeScreen = () => {
               />
             </View>
           </View>
-        )}
+        ) : null}
       </ScrollView>
       <AppHeader
         rightAction={
@@ -256,16 +267,8 @@ const styles = StyleSheet.create({
     ...Typography.caption,
     color: Colors.textMuted,
   },
-  loadingState: {
-    flex: 1,
+  screenState: {
     minHeight: scale(220),
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.md,
-  },
-  loadingText: {
-    ...Typography.body,
-    color: Colors.textMuted,
   },
   emptyState: {
     minHeight: scale(280),

@@ -1,7 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AppButton from "@/components/AppButton";
@@ -18,6 +18,7 @@ import welcomeVideo from "../../assets/videos/welcome.mp4";
 
 const WelcomeScreen = () => {
   const [isStarting, setIsStarting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const player = useVideoPlayer(welcomeVideo, (nextPlayer) => {
     nextPlayer.loop = true;
@@ -27,6 +28,7 @@ const WelcomeScreen = () => {
 
   const getStarted = async () => {
     setIsStarting(true);
+    setErrorMessage(null);
 
     try {
       await auth.signInAnonymously();
@@ -39,6 +41,9 @@ const WelcomeScreen = () => {
         action: "sign_in",
         message,
       });
+      setErrorMessage(
+        "Unable to get started. Check your connection and try again.",
+      );
     } finally {
       setIsStarting(false);
     }
@@ -68,8 +73,13 @@ const WelcomeScreen = () => {
         style={styles.overlay}
       >
         <View style={styles.action}>
+          {errorMessage ? (
+            <Text selectable style={styles.errorMessage}>
+              {errorMessage}
+            </Text>
+          ) : null}
           <AppButton
-            label="Get Started"
+            label={errorMessage ? "Try Again" : "Get Started"}
             loading={isStarting}
             onPress={getStarted}
           />

@@ -139,6 +139,12 @@ const AddCardsToCollectionScreen = ({ navigation, route }: Props) => {
     !isLoading && status === "error" && allCards.length === 0;
   const shouldShowCards = !isLoading && !hasLoadError;
 
+  const retryLoad = () => {
+    if (ownerId) {
+      ensureLoaded(ownerId);
+    }
+  };
+
   return (
     <View style={styles.root}>
       {isLoading && (
@@ -148,6 +154,7 @@ const AddCardsToCollectionScreen = ({ navigation, route }: Props) => {
         <ScreenState
           kind="error"
           message={loadError ?? "Could not load your cards."}
+          onRetry={retryLoad}
         />
       )}
       {shouldShowCards && (
