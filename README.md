@@ -54,10 +54,11 @@ The scan endpoint accepts a front/back multipart pair and validates file count, 
 
 The main service choices were:
 
-- **Gemini 2.5 Flash-Lite** for multimodal card recognition. Its image input and JSON response schema keep the analysis layer small and avoid parsing free-form text. The project was designed around its developer free tier rather than model sophistication.
-- **MongoDB Atlas** for structured user, card, and collection data. Its managed free tier fits the size of the project and Mongoose provides schema validation and useful query indexes.
-- **Firebase Anonymous Auth** for a low-friction identity.
-- **Firebase Storage** for card images. The Firebase session also supplies the ID token that the mobile app sends to the backend for authenticated API access.
+- **Gemini 2.5 Flash-Lite** can analyze both card images in one multimodal request and return JSON constrained by a response schema. Flash-Lite keeps latency and free-tier usage practical; a custom OCR and recognition pipeline would add complexity without improving the goal of this case study.
+- **MongoDB Atlas** fits the user, card, and collection document model, while Mongoose supplies schema validation and query indexes. Its managed free tier also avoids maintaining database infrastructure for a small project.
+- **Firebase Anonymous Auth** provides a persistent, low-friction identity without requiring registration or profile management. Firebase Admin can verify its ID tokens, so the project does not need a custom password and session system.
+- **Firebase Storage** keeps image binaries out of MongoDB and Vercel's temporary filesystem. The React Native Firebase SDK supports direct uploads and download URLs, leaving MongoDB to store only image references.
+- **Vercel** suits the small stateless Express API and provides a practical serverless free tier without an always-on server. The backend caches its MongoDB connection across warm invocations to reduce connection overhead.
 
 The estimated card price is not live marketplace data. Gemini is instructed to return a conservative ungraded estimate and to reject unclear, non-card, or mismatched images.
 
@@ -65,7 +66,7 @@ The estimated card price is not live marketplace data. Gemini is instructed to r
 
 History and collection flows provide loading, empty, error, retry, pull-to-refresh, and destructive confirmation states. Scanning has a dedicated progress screen and surfaces backend failure messages. Temporary image files are deleted after processing, and failed save attempts use best-effort cleanup for uploaded Storage objects.
 
-Amplitude is initialized when the app starts. The current events cover first launch, anonymous sign-in, camera or gallery image selection, scan success and failure, scan duration, confirmed card saves, and action failures.
+**Amplitude** provides lightweight product-event tracking through its React Native SDK without requiring a custom analytics backend. It is initialized when the app starts and tracks first launch, anonymous sign-in, camera or gallery image selection, scan success and failure, scan duration, confirmed card saves, and action failures.
 
 ## Assumptions and tradeoffs
 
